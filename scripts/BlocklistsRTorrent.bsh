@@ -30,55 +30,56 @@ source "$(dirname "$0")/../inc/includes_before"
 
 #### Clean the rTorrent blocklist
 gfnCleanBlockList() {
-	local sCommand sFile sUrl sListName sAuthor sLastUpdate
+    local sCommand sFile sUrl sListName sAuthor sLastUpdate
 
-	sCommand="$1"
-	sFile="$2"
-	sUrl="$3"
-	sListName="$4"
-	sAuthor="$(echo "$sFile" | cut -d '#' -f 1)"
+    sCommand="${1}"
+    sFile="${2}"
+    sUrl="${3}"
+    sListName="${4}"
+    sAuthor="$(echo "${sFile}" | cut -d '#' -f 1)"
 
-	case $sCommand in
-	'download')
-		if (curl -skLS --retry 3 -o "${MySB_InstallDir}/files/blocklists/$sFile.gz" "$sUrl"); then
-			gzip -dc "${MySB_InstallDir}/files/blocklists/$sFile.gz" | cut -d: -f2 >"${MySB_InstallDir}/files/blocklists/$sFile.txt"
-			sLastUpdate="$(date +%Y-%m-%d\ %H:%M:%S)"
-		else
-			sLastUpdate="failed"
-		fi
-		cmdMySQL 'MySB_db' "UPDATE blocklists SET rtorrent_lastupdate='$sLastUpdate' WHERE author='$sAuthor' AND list_name='$sListName';" -v
-		;;
-	'del_spaces')
-		sed -i '/\ /d' "${MySB_InstallDir}/files/blocklists/$sFile.tmp"
-		;;
-	'not_numeric')
-		sed -i '/^[0123456789]/!d' "${MySB_InstallDir}/files/blocklists/$sFile.tmp"
-		;;
-	'not_cidr')
-		sed -i '/\//!d' "${MySB_InstallDir}/files/blocklists/$sFile.tmp"
-		;;
-	'del_RC')
-		sed -i '/^M/d' "${MySB_InstallDir}/files/blocklists/$sFile.tmp"
-		;;
-	'is_ip')
-		while read -r line; do
-			START=$(echo "$line" | cut -d '-' -f 1)
-			END=$(echo "$line" | cut -d '-' -f 2)
-			RESULT_START=$(printf "%s" "$START" | grep -E '^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
-			RESULT_END=$(printf "%s" "$END" | grep -E '^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
-			if [ ! "$RESULT_START" = "$START" ] || [ ! "$RESULT_END" = "$END" ]; then
-				sed -i "/$line/!d" "${MySB_InstallDir}/files/blocklists/$sFile.txt.tmp"
-			fi
-		done <"${MySB_InstallDir}/files/blocklists/$sFile.txt"
-		mv "${MySB_InstallDir}/files/blocklists/$sFile.txt.tmp" "${MySB_InstallDir}/files/blocklists/$sFile.txt"
-		;;
-	'sort_uniq')
-		sort -g "${MySB_InstallDir}/files/blocklists/$sFile.tmp" | uniq >"${MySB_InstallDir}/files/blocklists/$sFile.txt"
-		if [ -f "${MySB_InstallDir}/files/blocklists/blocklist_rtorrent.tmp" ]; then
-			rm -f "${MySB_InstallDir}/files/blocklists/blocklist_rtorrent.tmp"
-		fi
-		;;
-	esac
+    case "${sCommand}" in
+        'download')
+            if (curl -skLS --retry 3 -o "${MySB_InstallDir}/files/blocklists/${sFile}.gz" "${sUrl}"); then
+                gzip -dc "${MySB_InstallDir}/files/blocklists/${sFile}.gz" | cut -d: -f2 >"${MySB_InstallDir}/files/blocklists/${sFile}.txt"
+                sLastUpdate="$(date +%Y-%m-%d\ %H:%M:%S)"
+            else
+                sLastUpdate="failed"
+            fi
+            cmdMySQL 'MySB_db' "UPDATE blocklists SET rtorrent_lastupdate='${sLastUpdate}' WHERE author='${sAuthor}' AND list_name='${sListName}';" -v
+            ;;
+        'del_spaces')
+            sed -i '/\ /d' "${MySB_InstallDir}/files/blocklists/${sFile}.tmp"
+            ;;
+        'not_numeric')
+            sed -i '/^[0123456789]/!d' "${MySB_InstallDir}/files/blocklists/${sFile}.tmp"
+            ;;
+        'del_RC')
+            sed -i '/^M/d' "${MySB_InstallDir}/files/blocklists/${sFile}.tmp"
+            ;;
+        'dot')
+            sed -i '/\./!d' "${MySB_InstallDir}/files/blocklists/${sFile}.tmp"
+            ;;
+        'is_ip')
+            cp "${MySB_InstallDir}/files/blocklists/${sFile}.tmp" "${MySB_InstallDir}/files/blocklists/${sFile}.txt"
+            while read -r line; do
+                START=$(echo "${line}" | cut -d '-' -f 1)
+                END=$(echo "${line}" | cut -d '-' -f 2)
+                RESULT_START=$(printf "%s" "${START}" | grep -E '^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
+                RESULT_END=$(printf "%s" "${END}" | grep -E '^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
+                if [ "${RESULT_START}" != "${START}" ] || [ "${RESULT_END}" != "${END}" ]; then
+                    sed -i "/${line}/!d" "${MySB_InstallDir}/files/blocklists/${sFile}.txt"
+                fi
+            done <"${MySB_InstallDir}/files/blocklists/${sFile}.tmp"
+            mv "${MySB_InstallDir}/files/blocklists/${sFile}.txt" "${MySB_InstallDir}/files/blocklists/${sFile}.tmp"
+            ;;
+        'sort_uniq')
+            sort -g "${MySB_InstallDir}/files/blocklists/${sFile}.tmp" | uniq >"${MySB_InstallDir}/files/blocklists/${sFile}.txt"
+            if [ -f "${MySB_InstallDir}/files/blocklists/blocklist_rtorrent.tmp" ]; then
+                rm -f "${MySB_InstallDir}/files/blocklists/blocklist_rtorrent.tmp"
+            fi
+            ;;
+    esac
 }
 
 log_daemon_msg "$DeleteGlobalBlocklist"
@@ -90,44 +91,44 @@ fi
 gfnStatusLSB
 
 sIblocklistIdent="$(sqlite3 -cmd '.timeout 150000' "${gsblocklists_DB}" "SELECT username,pin FROM iblocklist_ident WHERE id='1';")"
-sUsername="$(echo "$sIblocklistIdent" | awk '{split($0,a,"|"); print a[1]}')"
-sPin="$(echo "$sIblocklistIdent" | awk '{split($0,a,"|"); print a[2]}')"
+sUsername="$(echo "${sIblocklistIdent}" | awk '{split($0,a,"|"); print a[1]}')"
+sPin="$(echo "${sIblocklistIdent}" | awk '{split($0,a,"|"); print a[2]}')"
 
 sPersonal="$(sqlite3 -cmd '.timeout 150000' "${gsblocklists_DB}" "SELECT source,name,list_url FROM blocklists WHERE enable='1' AND list_url != '';" | sed 's/\t/|/g;')"
 sIblocklists="$(cmdMySQL 'MySB_db' "SELECT author,list_name,list_url,subscription FROM blocklists WHERE enable='1' AND list_url != '';" | sed 's/\t/|/g;')"
 sAllLists="${sPersonal} ${sIblocklists}"
 
 while read -r ROW; do
-    Author="$(echo "$ROW" | awk '{split($0,a,"|"); print a[1]}')"
+    Author="$(echo "${ROW}" | awk '{split($0,a,"|"); print a[1]}')"
     Author="${Author// /_}"
-    ListName="$(echo "$ROW" | awk '{split($0,a,"|"); print a[2]}')"
-    ListNameToParse="$ListName"
+    ListName="$(echo "${ROW}" | awk '{split($0,a,"|"); print a[2]}')"
+    ListNameToParse="${ListName}"
     ListName=" ${ListName// /_}"
-    URL="$(echo "$ROW" | awk '{split($0,a,"|"); print a[3]}')"
-    FILE="$Author#$ListName"
-    Subscription="$(echo "$ROW" | awk '{split($0,a,"|"); print a[4]}')"
+    URL="$(echo "${ROW}" | awk '{split($0,a,"|"); print a[3]}')"
+    FILE="${Author}#${ListName}"
+    Subscription="$(echo "${ROW}" | awk '{split($0,a,"|"); print a[4]}')"
 
     {
-        [ -n "$sUsername" ]
-        [ -n "$sPin" ]
+        [ -n "${sUsername}" ]
+        [ -n "${sPin}" ]
         [ "${Subscription}" == "true" ]
     } && URL="${URL}&username=${sUsername}&pin=${sPin}"
 
-    if [ -n "$FILE" ] && [ -n "$URL" ]; then
-        log_daemon_msg "${DownloadSelectedList}" "$Author - $ListName"
-        gfnCleanBlockList download "$FILE" "$URL" "$ListNameToParse" &>/dev/null
+    if [ -n "${FILE}" ] && [ -n "${URL}" ]; then
+        log_daemon_msg "${DownloadSelectedList}" "${Author} - ${ListName}"
+        gfnCleanBlockList download "${FILE}" "${URL}" "${ListNameToParse}" &>/dev/null
 
         # complete global list
-        if [ -f "${MySB_InstallDir}/files/blocklists/$FILE.txt" ]; then
-            cat "${MySB_InstallDir}/files/blocklists/$FILE.txt" >>"${MySB_InstallDir}"/files/blocklists/blocklist_rtorrent.tmp
+        if [ -f "${MySB_InstallDir}/files/blocklists/${FILE}.txt" ]; then
+            cat "${MySB_InstallDir}/files/blocklists/${FILE}.txt" >>"${MySB_InstallDir}"/files/blocklists/blocklist_rtorrent.tmp
         fi
 
         # delete unused files
-        if [ -f "${MySB_InstallDir}/files/blocklists/$FILE.tmp" ]; then
-            rm -f "${MySB_InstallDir}/files/blocklists/$FILE.tmp"
+        if [ -f "${MySB_InstallDir}/files/blocklists/${FILE}.tmp" ]; then
+            rm -f "${MySB_InstallDir}/files/blocklists/${FILE}.tmp"
         fi
-        if [ -f "${MySB_InstallDir}/files/blocklists/$FILE.gz" ]; then
-            rm -f "${MySB_InstallDir}/files/blocklists/$FILE.gz"
+        if [ -f "${MySB_InstallDir}/files/blocklists/${FILE}.gz" ]; then
+            rm -f "${MySB_InstallDir}/files/blocklists/${FILE}.gz"
         fi
         gfnStatusLSB
     fi
@@ -213,7 +214,7 @@ gfnStatusLSB
 
 # delete line without "/" (is not in CIDR format)
 log_daemon_msg "${DeleteLinesWithoutIpRange}"
-gfnCleanBlockList not_iprange blocklist_rtorrent
+gfnCleanBlockList dot blocklist_rtorrent
 gfnStatusLSB
 
 # sort by alpha and delete double line
@@ -222,20 +223,20 @@ gfnCleanBlockList sort_uniq blocklist_rtorrent
 gfnStatusLSB
 
 if [ -f "${MySB_InstallDir}"/files/blocklists/blocklist_rtorrent.tmp ]; then
-    rm -vf "${MySB_InstallDir}"/files/blocklists/blocklist_rtorrent.tmp
+    rm -f "${MySB_InstallDir}"/files/blocklists/blocklist_rtorrent.tmp
 fi
 
 gfnListCountUsers 'normal'
 for seedUser in ${gsUsersList}; do
-    if [ -d /home/"$seedUser"/ ]; then
-        log_daemon_msg "${CopyNewGlobalList} $seedUser"
-        if [ -d /home/"$seedUser"/blocklist ]; then
-            rm -f /home/"$seedUser"/blocklist/*
+    if [ -d /home/"${seedUser}"/ ]; then
+        log_daemon_msg "${CopyNewGlobalList} ${seedUser}"
+        if [ -d /home/"${seedUser}"/blocklist ]; then
+            rm -f /home/"${seedUser}"/blocklist/*
         else
-            mkdir /home/"$seedUser"/blocklist
+            mkdir /home/"${seedUser}"/blocklist
         fi
-        cp "${MySB_InstallDir}"/files/blocklists/* /home/"$seedUser"/blocklist/
-        gfnManageUserHomeDir "$seedUser"
+        cp "${MySB_InstallDir}"/files/blocklists/* /home/"${seedUser}"/blocklist/
+        gfnManageUserHomeDir "${seedUser}"
         gfnStatusLSB
     fi
 done
