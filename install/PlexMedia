@@ -54,6 +54,14 @@ function fnPlexPlugins() {
     chmod -R 775 "${sPlexDir}"/Plug-ins/Hama.bundle/
 }
 
+# Clean all 32400/TCP connexions
+function fnCleanAllConnexions() {
+    while netstat -laputen | grep 32400 >/dev/null; do
+        fuser -k 32400/tcp
+        sleep 0.2
+    done
+}
+
 # Install Plex DEB package
 function fnInstallPlex() {
     local sServices
@@ -80,6 +88,9 @@ function fnInstallPlex() {
         # Stop services
         gfnManageServices stop "${sServices}"
 
+        # clean all connections
+        fnCleanAllConnexions
+
         if [ -f "${gsRepoDir}/${gsRepoFile}" ]; then
             sPackages=(alsa-oss oss-compat libasound2-plugins "${gsRepoDir}/${gsRepoFile}")
             gfnPackageBundleInstall "${sPackages[@]}"
@@ -90,6 +101,9 @@ function fnInstallPlex() {
 
         # Stop services again
         gfnManageServices stop "${sServices}"
+
+        # clean all connections
+        fnCleanAllConnexions
 
         # Preferences.xml
         sPreferencesFile='/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml'
