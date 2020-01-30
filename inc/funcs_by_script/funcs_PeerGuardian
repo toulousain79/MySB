@@ -177,15 +177,19 @@ gfnPeerGuardianFailed() {
                 fi
 
                 if [ -f /home/"${sUser}"/.rtorrent.rc ]; then
-                    {
-                        echo 'ipv4_filter.load = (cat,(cfg.blocklistdir),"blocklist_rtorrent.txt"),unwanted'
-                        echo 'schedule2 = load_filter,0,24:00:00,"ipv4_filter.load = (cat,(cfg.blocklistdir),"blocklist_rtorrent.txt"),unwanted"'
-                        echo 'print = "IPv4 filter list size data:",(to_kb,(ipv4_filter.size_data))," kb."'
-                    } >/home/"${sUser}"/rtorrent/config.d/80-blocklist.rc
+                    if (grep -q '^#ipv4_filter.load' /home/"${sUser}"/rtorrent/config.d/80-blocklist.rc); then
+                        {
+                            echo 'ipv4_filter.load = (cat,(cfg.blocklistdir),"blocklist_rtorrent.txt"),unwanted'
+                            echo 'schedule2 = load_filter,0,24:00:00,"ipv4_filter.load = (cat,(cfg.blocklistdir),"blocklist_rtorrent.txt"),unwanted"'
+                            echo 'print = "IPv4 filter list size data:",(to_kb,(ipv4_filter.size_data))," kb."'
+                        } >/home/"${sUser}"/rtorrent/config.d/80-blocklist.rc
 
-                    if (systemctl status rtorrent-"${sUser}" >/dev/null); then
-                        gfnStatusLSB 0
-                        systemctl restart rtorrent-"${sUser}"
+                        if (systemctl status rtorrent-"${sUser}" >/dev/null); then
+                            gfnStatusLSB 0
+                            systemctl restart rtorrent-"${sUser}"
+                        else
+                            gfnStatusLSB 0
+                        fi
                     else
                         gfnStatusLSB 0
                     fi
@@ -195,7 +199,7 @@ gfnPeerGuardianFailed() {
                 ;;
             "PeerGuardian")
                 if [ -f /home/"${sUser}"/.rtorrent.rc ]; then
-                    if (grep -q '^ipv4_filter.load' /home/"${sUser}"/.rtorrent.rc); then
+                    if (grep -q '^ipv4_filter.load' /home/"${sUser}"/rtorrent/config.d/80-blocklist.rc); then
                         {
                             echo '#ipv4_filter.load = (cat,(cfg.blocklistdir),"blocklist_rtorrent.txt"),unwanted'
                             echo '#schedule2 = load_filter,0,24:00:00,"ipv4_filter.load = (cat,(cfg.blocklistdir),"blocklist_rtorrent.txt"),unwanted"'
