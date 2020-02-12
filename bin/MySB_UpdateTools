@@ -25,11 +25,23 @@
 #
 ##################### FIRST LINE #####################################
 
+#### VARs
+bPlexCheckConfig=0
+bRtorrentRestart=0
+gfnListCountUsers 'normal'
+
 #### PlexMedia & Tautulli update
 if [ "${gbIsInstalled_PlexMedia}" == "YES" ]; then
     log_daemon_msg "${UpdateTools_Plex[*]}"
     gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/PlexMedia" 'CRON'
     gfnStatusLSB
+
+    sPreferencesRev='/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.rev'
+    if [ -f "${sPreferencesRev}" ]; then
+        (! grep -q '0' "${sPreferencesRev}") && bPlexCheckConfig=1
+    else
+        bPlexCheckConfig=1
+    fi
 fi
 
 #### DNScrypt-proxy
@@ -52,9 +64,6 @@ if gfnCheckCommand 0 docker; then
     gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/Docker" 'CRON'
     gfnStatusLSB
 fi
-
-bRtorrentRestart=0
-gfnListCountUsers 'normal'
 
 #### ruTorrent
 sVersionDB="$(cmdMySQL 'MySB_db' "SELECT version FROM repositories WHERE name='ruTorrent';")"
@@ -103,7 +112,13 @@ if [[ ${bRtorrentRestart} -eq 1 ]]; then
         } >"/etc/sudoers.d/MySB_${sUser}"
         chmod 0440 "/etc/sudoers.d/MySB_${sUser}"
     done
-    # gfnManageServices stop "sudo"
+fi
+
+#### Plex restart needed
+if [[ ${bPlexCheckConfig} -eq 1 ]]; then
+    . /opt/MySB/install/PlexMedia
+    fnGeneratePreferencesXml
+    gfnManageServices start "plexmediaserver"
 fi
 
 #### Cron jobs

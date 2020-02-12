@@ -29,6 +29,9 @@ source "$(dirname "$0")"/../inc/includes_before
 #   Python API: https://python-plexapi.readthedocs.io/en/latest/introduction.html
 ######################################################################
 
+#### VARs
+sPreferencesRev='0'
+
 #### FUNCTIONs
 # Plex plugins
 function fnPlexPlugins() {
@@ -60,6 +63,97 @@ function fnCleanAllConnexions() {
         fuser -k 32400/tcp
         sleep 0.2
     done
+}
+
+# Generate Preferences.xml
+function fnGeneratePreferencesXml() {
+    local sNewPreferences aParams
+    sNewPreferences=()
+    aParams=()
+
+    # https://support.plex.tv/articles/201105343-advanced-hidden-server-settings/
+    sPreferencesFile='/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml'
+    if [ -f "${sPreferencesFile}" ]; then
+        cat "${sPreferencesFile}"
+        sed -i \
+            -e '/<?xml version="1.0" encoding="utf-8"?>/d' \
+            -e 's/  //g;s/<Preferences//g;s,/>,,g;' \
+            "${sPreferencesFile}"
+        while read -r -d ' ' sParam; do
+            sParam="${sParam// /}"
+            case "$(echo "${sParam}" | cut -d '=' -f 1)" in
+                'allowMediaDeletion') sNewPreferences+=('allowMediaDeletion="1"') ;;
+                'allowedNetworks') sNewPreferences+=('allowedNetworks="127.0.0.1/255.255.255.255"') ;;
+                'autoEmptyTrash') sNewPreferences+=('autoEmptyTrash="1"') ;;
+                'BackgroundTranscodeLowPriority') sNewPreferences+=('BackgroundTranscodeLowPriority="1"') ;;
+                'DlnaDeviceDiscoveryInterval') sNewPreferences+=('DlnaDeviceDiscoveryInterval="0"') ;;
+                'DlnaEnabled') sNewPreferences+=('DlnaEnabled="0"') ;;
+                'DlnaPlatinumLoggingLevel') sNewPreferences+=('DlnaPlatinumLoggingLevel="OFF"') ;;
+                'EnableIPv6') sNewPreferences+=('EnableIPv6="0"') ;;
+                'FriendlyName') sNewPreferences+=('FriendlyName="MySB"') ;;
+                'FSEventLibraryUpdatesEnabled') sNewPreferences+=('FSEventLibraryUpdatesEnabled="1"') ;;
+                'FSEventLibraryPartialScanEnabled') sNewPreferences+=('FSEventLibraryPartialScanEnabled="1"') ;;
+                'GdmEnabled') sNewPreferences+=('GdmEnabled="0"') ;;
+                'logDebug') sNewPreferences+=('logDebug="0"') ;;
+                'ManualPortMappingPort') sNewPreferences+=('ManualPortMappingPort="32400"') ;;
+                'secureConnections') sNewPreferences+=('secureConnections="0"') ;;
+                'sendCrashReports') sNewPreferences+=('sendCrashReports="0"') ;;
+                'ScheduledLibraryUpdatesEnabled') sNewPreferences+=('ScheduledLibraryUpdatesEnabled="1"') ;;
+                'ScheduledLibraryUpdateInterval') sNewPreferences+=('ScheduledLibraryUpdateInterval="1800"') ;;
+                'TranscoderH264OptionsOverride') sNewPreferences+=('TranscoderH264OptionsOverride="veryfast"') ;;
+                'TranscoderTempDirectory') sNewPreferences+=('TranscoderTempDirectory="/dev/shm"') ;;
+                'MetricsEpoch') sNewPreferences+=('MetricsEpoch="1"') ;;
+                'AcceptedEULA') sNewPreferences+=('AcceptedEULA="1"') ;;
+                'PublishServerOnPlexOnlineKey') sNewPreferences+=('PublishServerOnPlexOnlineKey="1"') ;;
+                'PlexOnlineHome') sNewPreferences+=('PlexOnlineHome="1"') ;;
+                'PreferredNetworkInterface') sNewPreferences+=("PreferredNetworkInterface=\"${gsPrimaryInet}\"") ;;
+                'DlnaReportTimeline') sNewPreferences+=('DlnaReportTimeline="0"') ;;
+                'HardwareAcceleratedCodecs') sNewPreferences+=('HardwareAcceleratedCodecs="1"') ;;
+                'TranscodeCountLimit') sNewPreferences+=("TranscodeCountLimit=\"${gsProcessors}\"") ;;
+                'PubSubServer' | 'PubSubServerRegion' | 'PubSubServerPing') continue ;;
+                *) sNewPreferences+=("${sParam}") ;;
+            esac
+        done <"${sPreferencesFile}"
+
+        {
+            echo '<?xml version="1.0" encoding="utf-8"?>'
+            echo "<Preferences ${sNewPreferences[*]} />"
+        } >"${sPreferencesFile}"
+
+        aParams=(allowedNetworks autoEmptyTrash DlnaDeviceDiscoveryInterval DlnaEnabled DlnaPlatinumLoggingLevel FSEventLibraryUpdatesEnabled FSEventLibraryPartialScanEnabled)
+        aParams+=(GdmEnabled ManualPortMappingPort secureConnections ScheduledLibraryUpdatesEnabled TranscoderTempDirectory MetricsEpoch AcceptedEULA PublishServerOnPlexOnlineKey)
+        aParams+=(PlexOnlineHome PreferredNetworkInterface HardwareAcceleratedCodecs DlnaReportTimeline FriendlyName EnableIPv6)
+        for sParam in "${aParams[@]}"; do
+            (! grep -q "${sParam}" "${sPreferencesFile}") && {
+                case "${sParam}" in
+                    'allowedNetworks') perl -pi -e 's/<Preferences/<Preferences allowedNetworks="127.0.0.1\/255.255.255.255"/g' "${sPreferencesFile}" ;;
+                    'autoEmptyTrash') perl -pi -e 's/<Preferences/<Preferences autoEmptyTrash="1"/g' "${sPreferencesFile}" ;;
+                    'DlnaDeviceDiscoveryInterval') perl -pi -e 's/<Preferences/<Preferences DlnaDeviceDiscoveryInterval="0"/g' "${sPreferencesFile}" ;;
+                    'DlnaEnabled') perl -pi -e 's/<Preferences/<Preferences DlnaEnabled="0"/g' "${sPreferencesFile}" ;;
+                    'DlnaPlatinumLoggingLevel') perl -pi -e 's/<Preferences/<Preferences DlnaPlatinumLoggingLevel="OFF"/g' "${sPreferencesFile}" ;;
+                    'FSEventLibraryUpdatesEnabled') perl -pi -e 's/<Preferences/<Preferences FSEventLibraryUpdatesEnabled="1"/g' "${sPreferencesFile}" ;;
+                    'FSEventLibraryPartialScanEnabled') perl -pi -e 's/<Preferences/<Preferences FSEventLibraryPartialScanEnabled="1"/g' "${sPreferencesFile}" ;;
+                    'GdmEnabled') perl -pi -e 's/<Preferences/<Preferences GdmEnabled="0"/g' "${sPreferencesFile}" ;;
+                    'ManualPortMappingPort') perl -pi -e 's/<Preferences/<Preferences ManualPortMappingPort="32400"/g' "${sPreferencesFile}" ;;
+                    'secureConnections') perl -pi -e 's/<Preferences/<Preferences secureConnections="0"/g' "${sPreferencesFile}" ;;
+                    'ScheduledLibraryUpdatesEnabled') perl -pi -e 's/<Preferences/<Preferences ScheduledLibraryUpdatesEnabled="1"/g' "${sPreferencesFile}" ;;
+                    'TranscoderTempDirectory') perl -pi -e 's/<Preferences/<Preferences TranscoderTempDirectory="\/dev\/shm"/g' "${sPreferencesFile}" ;;
+                    'MetricsEpoch') perl -pi -e 's/<Preferences/<Preferences MetricsEpoch="1"/g' "${sPreferencesFile}" ;;
+                    'AcceptedEULA') perl -pi -e 's/<Preferences/<Preferences AcceptedEULA="1"/g' "${sPreferencesFile}" ;;
+                    'PublishServerOnPlexOnlineKey') perl -pi -e 's/<Preferences/<Preferences PublishServerOnPlexOnlineKey="1"/g' "${sPreferencesFile}" ;;
+                    'PlexOnlineHome') perl -pi -e 's/<Preferences/<Preferences PlexOnlineHome="1"/g' "${sPreferencesFile}" ;;
+                    'PreferredNetworkInterface') perl -pi -e "s/<Preferences/<Preferences PreferredNetworkInterface=\"${gsPrimaryInet}\"/g" "${sPreferencesFile}" ;;
+                    'HardwareAcceleratedCodecs') perl -pi -e 's/<Preferences/<Preferences HardwareAcceleratedCodecs="1"/g' "${sPreferencesFile}" ;;
+                    'DlnaReportTimeline') perl -pi -e 's/<Preferences/<Preferences DlnaReportTimeline="0"/g' "${sPreferencesFile}" ;;
+                    'FriendlyName') perl -pi -e 's/<Preferences/<Preferences FriendlyName="MySB"/g' "${sPreferencesFile}" ;;
+                    'EnableIPv6') perl -pi -e 's/<Preferences/<Preferences EnableIPv6="0"/g' "${sPreferencesFile}" ;;
+                esac
+            }
+        done
+        sed -i -e 's/  //g;s, />,/>,g;' "${sPreferencesFile}"
+        cat "${sPreferencesFile}"
+    fi
+    echo "${sPreferencesRev}" >"${sPreferencesFile//Preferences.xml/Preferences.rev}"
 }
 
 # Install Plex DEB package
@@ -106,73 +200,7 @@ function fnInstallPlex() {
         fnCleanAllConnexions
 
         # Preferences.xml
-        sPreferencesFile='/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml'
-        if [ -f "${sPreferencesFile}" ]; then
-            cat "${sPreferencesFile}"
-            perl -pi -e 's/\"\/>/\" \/>/g' "${sPreferencesFile}"
-            sNewPreferences=()
-            while read -r sParam; do
-                case "$(echo "${sParam}" | cut -d '=' -f 1)" in
-                    'OldestPreviousVersion') sNewPreferences+=("${sParam}") ;;
-                    'MachineIdentifier') sNewPreferences+=("${sParam}") ;;
-                    'ProcessedMachineIdentifier') sNewPreferences+=("${sParam}") ;;
-                    'AnonymousMachineIdentifier') sNewPreferences+=("${sParam}") ;;
-                    'MetricsEpoch') sNewPreferences+=('MetricsEpoch="1"') ;;
-                    'AcceptedEULA') sNewPreferences+=('AcceptedEULA="1"') ;;
-                    'FriendlyName') sNewPreferences+=('FriendlyName="MySB"') ;;
-                    'PublishServerOnPlexOnlineKey') sNewPreferences+=('PublishServerOnPlexOnlineKey="1"') ;;
-                    'PlexOnlineToken') sNewPreferences+=("${sParam}") ;;
-                    'PlexOnlineUsername') sNewPreferences+=("${sParam}") ;;
-                    'PlexOnlineMail') sNewPreferences+=("${sParam}") ;;
-                    'PlexOnlineHome') sNewPreferences+=('PlexOnlineHome="1"') ;;
-                    'DlnaEnabled') sNewPreferences+=('DlnaEnabled="0"') ;;
-                    'CertificateVersion') sNewPreferences+=("${sParam}") ;;
-                    'PubSubServer') sNewPreferences+=("${sParam}") ;;
-                    'PubSubServerRegion') sNewPreferences+=("${sParam}") ;;
-                    'PubSubServerPing') sNewPreferences+=("${sParam}") ;;
-                    'FSEventLibraryPartialScanEnabled') sNewPreferences+=('FSEventLibraryPartialScanEnabled="1"') ;;
-                    'FSEventLibraryUpdatesEnabled') sNewPreferences+=('FSEventLibraryUpdatesEnabled="1"') ;;
-                    'ScheduledLibraryUpdateInterval') sNewPreferences+=('ScheduledLibraryUpdateInterval="1800"') ;;
-                    'ScheduledLibraryUpdatesEnabled') sNewPreferences+=('ScheduledLibraryUpdatesEnabled="1"') ;;
-                    'GdmEnabled') sNewPreferences+=('GdmEnabled="0"') ;;
-                    'PreferredNetworkInterface') sNewPreferences+=("PreferredNetworkInterface=\"${gsPrimaryInet}\"") ;;
-                    'secureConnections') sNewPreferences+=("${sParam}") ;;
-                    'DlnaReportTimeline') sNewPreferences+=('DlnaReportTimeline="0"') ;;
-                    'LanguageInCloud') sNewPreferences+=("${sParam}") ;;
-                    'GracenoteUser') sNewPreferences+=("${sParam}") ;;
-                    'EnableIPv6') sNewPreferences+=('EnableIPv6="0"') ;;
-                    'allowedNetworks') sNewPreferences+=('allowedNetworks="127.0.0.1\/255.255.255.255"') ;;
-                    'TranscoderTempDirectory') sNewPreferences+=('TranscoderTempDirectory="\/dev\/shm"') ;;
-                esac
-            done < <(cat "${sPreferencesFile}")
-            {
-                echo '<?xml version="1.0" encoding="utf-8"?>'
-                echo "<Preferences ${sNewPreferences[*]} />"
-            } >"${sPreferencesFile}"
-            aParams=('MetricsEpoch' 'AcceptedEULA' 'FriendlyName' 'PublishServerOnPlexOnlineKey' 'PlexOnlineHome' 'DlnaEnabled' 'FSEventLibraryPartialScanEnabled' 'FSEventLibraryUpdatesEnabled' 'ScheduledLibraryUpdatesEnabled' 'GdmEnabled' 'PreferredNetworkInterface' 'DlnaReportTimeline' 'EnableIPv6' 'allowedNetworks' 'TranscoderTempDirectory')
-            for sParam in "${aParams[@]}"; do
-                (! grep -q "${sParam}" "${sPreferencesFile}") && {
-                    case "${sParam}" in
-                        'MetricsEpoch') perl -pi -e 's/<Preferences/<Preferences MetricsEpoch="1"/g' "${sPreferencesFile}" ;;
-                        'AcceptedEULA') perl -pi -e 's/<Preferences/<Preferences AcceptedEULA="1"/g' "${sPreferencesFile}" ;;
-                        'FriendlyName') perl -pi -e 's/<Preferences/<Preferences FriendlyName="MySB"/g' "${sPreferencesFile}" ;;
-                        'PublishServerOnPlexOnlineKey') perl -pi -e 's/<Preferences/<Preferences PublishServerOnPlexOnlineKey="1"/g' "${sPreferencesFile}" ;;
-                        'PlexOnlineHome') perl -pi -e 's/<Preferences/<Preferences PlexOnlineHome="1"/g' "${sPreferencesFile}" ;;
-                        'DlnaEnabled') perl -pi -e 's/<Preferences/<Preferences DlnaEnabled="0"/g' "${sPreferencesFile}" ;;
-                        'FSEventLibraryPartialScanEnabled') perl -pi -e 's/<Preferences/<Preferences FSEventLibraryPartialScanEnabled="1"/g' "${sPreferencesFile}" ;;
-                        'FSEventLibraryUpdatesEnabled') perl -pi -e 's/<Preferences/<Preferences FSEventLibraryUpdatesEnabled="1"/g' "${sPreferencesFile}" ;;
-                        'ScheduledLibraryUpdatesEnabled') perl -pi -e 's/<Preferences/<Preferences ScheduledLibraryUpdatesEnabled="1"/g' "${sPreferencesFile}" ;;
-                        'GdmEnabled') perl -pi -e 's/<Preferences/<Preferences GdmEnabled="0"/g' "${sPreferencesFile}" ;;
-                        'PreferredNetworkInterface') perl -pi -e "s/<Preferences/<Preferences PreferredNetworkInterface=\"${gsPrimaryInet}\"/g" "${sPreferencesFile}" ;;
-                        'DlnaReportTimeline') perl -pi -e 's/<Preferences/<Preferences DlnaReportTimeline="0"/g' "${sPreferencesFile}" ;;
-                        'EnableIPv6') perl -pi -e 's/<Preferences/<Preferences EnableIPv6="0"/g' "${sPreferencesFile}" ;;
-                        'allowedNetworks') perl -pi -e 's/<Preferences/<Preferences allowedNetworks="127.0.0.1\/255.255.255.255"/g' "${sPreferencesFile}" ;;
-                        'TranscoderTempDirectory') perl -pi -e 's/<Preferences/<Preferences TranscoderTempDirectory="\/dev\/shm"/g' "${sPreferencesFile}" ;;
-                    esac
-                }
-            done
-            cat "${sPreferencesFile}"
-        fi
+        fnGeneratePreferencesXml
 
         # Plugins
         fnPlexPlugins
