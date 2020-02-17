@@ -30,7 +30,35 @@ LocSwitch="$1"
 if [ -n "${LocSwitch}" ] && gfnCheckCommand 0 pglcmd; then
     case "${LocSwitch}" in
         "restart") [[ ${gbDnsCryptSwitch} -eq 1 ]] && systemctl restart dnscrypt-proxy.service ;;
-        "check") [[ ${gbDnsCryptSwitch} -eq 1 ]] && (systemctl status dnscrypt-proxy.service >/dev/null || systemctl restart dnscrypt-proxy) ;;
+        "check")
+            bRestart=0
+
+            for sDomain in "${gsUrlCheckList[@]}" "${gaNeededDomains[@]}"; do
+                sDomain="$(echo "${sDomain}" | cut -d '/' -f 1)"
+                sResult="$(host -4 -N 0 -t A "${sDomain}" | tail -n 1)"
+                if (grep -q 'SERVFAIL' <<<"${sResult}"); then
+                    bRestart=1
+                fi
+            done
+
+            for sUrlCheck in "${gsUrlCheckList[@]}"; do
+                case "${sUrlCheck}" in
+                    'checkip.dyndns.com') gsSrvIpAddressExt="$(curl --silent "${sUrlCheck}" | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')" ;;
+                    *) gsSrvIpAddressExt="$(curl --silent "${sUrlCheck}")" ;;
+                esac
+                if [ -n "${gsSrvIpAddressExt}" ]; then
+                    break
+                else
+                    bRestart=1
+                fi
+            done
+
+            if [[ ${gbDnsCryptSwitch} -eq 1 ]]; then
+                systemctl status dnscrypt-proxy.service >/dev/null || bRestart=1
+            fi
+
+            [[ ${bRestart} -eq 1 ]] && systemctl restart dnscrypt-proxy
+            ;;
     esac
 fi
 
