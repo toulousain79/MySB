@@ -26,48 +26,46 @@ echo '<div id="jQ-menu">';
 
 $path = "./logs/";
 
-	function createDir($path = '.') {
-		if ($handle = opendir($path)) {
-			echo "<ul>";
+function createDir($path = '.') {
+	if ($handle = opendir($path)) {
+		echo "<ul>";
 
-			while (false !== ($file = readdir($handle))) {
-				if (is_dir($path.$file) && $file != '.' && $file !='..')
-					printSubDir($file, $path, $queue);
-				else if ($file != '.' && $file !='..')
-					$queue[] = $file;
-			}
-
-			printQueue($queue, $path);
-			echo "</ul>";
+		while (false !== ($file = readdir($handle))) {
+			if (is_dir($path.$file) && $file != '.' && $file !='..')
+				printSubDir($file, $path, $queue);
+			else if ($file != '.' && $file !='..')
+				$queue[] = $file;
 		}
-	}
 
-	function printQueue($queue, $path) {
-		foreach ($queue as $file) {
-			printFile($file, $path);
-		}
+		printQueue($queue, $path);
+		echo "</ul>";
 	}
+}
 
-	function printFile($file, $path) {
-		$SudDirectory = preg_replace('/.\/logs\//', '', "$path");
-		$SudDirectory = preg_replace('/\//', '', "$SudDirectory");
-		echo "<li><a href=\"/?admin/logs.html?dir=".$SudDirectory."&file=".$file."\">$file</a></li>";
+function printQueue($queue, $path) {
+	foreach ($queue as $file) {
+		printFile($file, $path);
 	}
+}
 
-	function printSubDir($dir, $path) {
-		echo "<li><span class=\"toggle\">$dir</span>";
-		createDir($path.$dir."/");
-		echo "</li>";
-	}
+function printFile($file, $path) {
+	$SudDirectory = preg_replace('/.\/logs\//', '', "$path");
+	echo "<li><a href=\"/?admin/logs.html?dir=".$SudDirectory."&file=".$file."\">$file</a></li>";
+}
 
-	createDir($path);
+function printSubDir($dir, $path) {
+	echo "<li><span class=\"toggle\">$dir</span>";
+	createDir($path.$dir."/");
+	echo "</li>";
+}
+
+createDir($path);
 
 echo '</div>';
 
 if ( isset($_GET['dir']) && isset($_GET['file']) ) {
 	echo '<div style="background-color:#404040;">';
-	include_once('./logs/'.$_GET['dir'].'/'.$_GET['file']);
-	echo $contenu;
+	include_once($path.$_GET['dir'].'/'.$_GET['file']);
 	echo '</div>';
 
 	// jQuery Color Plugin

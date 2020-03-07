@@ -33,7 +33,7 @@ else
 fi
 
 case "${CHECK_METHOD}" in
-    'full' | 'integ' | 'install')
+    'full' | 'install' | 'integ')
         #### Replace systemctl
         gfnCopyProject
         sFilesList="$(grep -IRl "systemctl " --exclude-dir ".git" --exclude-dir ".vscode" --exclude-dir "ci" --exclude-dir "lang" --exclude-dir "logrotate" --exclude-dir "web" "${sDirToScan}/")"
@@ -126,7 +126,7 @@ case "${CHECK_METHOD}" in
 esac
 
 case "${CHECK_METHOD}" in
-    'integ' | 'full' | 'install')
+    'full' | 'install' | 'integ')
         # shellcheck source=/dev/null
         . /etc/MySB/config
         sFilesList="$(find "${MySB_InstallDir}"/inc/funcs_by_script/ -type f)"
