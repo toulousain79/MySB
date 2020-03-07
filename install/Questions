@@ -589,52 +589,39 @@ DisplaySurvey() {
         if [ "${RepeatSurvey}" == "YES" ]; then
             sValue="${gsMainUserIPs}"
         else
-            # get actual main user ip addresses
-            if [ "${TYPE}" == "UPGRADE" ]; then
-                if [ "${gsIpRestriction}" != "$Global_YES" ]; then
-                    # get maybe a new one
-                    sTempIPs="$(echo "$SSH_CLIENT" | awk '{ print $1 }')"
-                    if [ -z "${sTempIPs}" ]; then
-                        sTempIPs="$(who --ips | awk '{print $6}' | grep "^[0123456789]")"
-                        if [ -z "${sTempIPs}" ]; then
-                            sTempIPs="$(who --ips | awk '{print $5}' | grep "^[0123456789]")"
-                        fi
-                    fi
-                    if (! grep -q "${sTempIPs}" <<<"${sValue}"); then
-                        if [ -z "${sValue}" ]; then
-                            sValue="${sTempIPs}"
-                        else
-                            sValue="${sValue},${sTempIPs}"
-                        fi
-                    fi
-                else
-                    for sIp in ${gsMainUserIPs}; do
-                        sIp="$(echo "${sIp}" | sed 's/^ //g;s/\s+$//g;s/\/32//g;')"
+            sTempIPs=()
+            mapfile -t sTempIPs <<<"$(who --ips | awk '{print $5}' | grep '^[0123456789]' | sort | uniq) $(who --ips | awk '{print $6}' | grep '^[0123456789]' | sort | uniq)  ${SSH_CLIENT} ${sValue}"
+            for sIp in "${sTempIPs[@]}"; do
+                if [ "$(gfnValidateIP "${sIp// /}")" == "${sIp// /}" ]; then
+                    if (! grep -q "${sIp}" <<<"${sValue}"); then
                         if [ -z "${sValue}" ]; then
                             sValue="${sIp}"
                         else
                             sValue="${sValue},${sIp}"
                         fi
+                    fi
+                fi
+            done
+            unset sIp
+
+            # get actual main user ip addresses
+            if [ "${TYPE}" == "UPGRADE" ]; then
+                if [ "${gsIpRestriction}" == "${Global_YES}" ]; then
+                    for sIp in ${gsMainUserIPs}; do
+                        sIp="$(echo "${sIp}" | sed 's/^ //g;s/\s+$//g;s/\/32//g;')"
+                        if (! grep -q "${sIp}" <<<"${sValue}"); then
+                            if [ -z "${sValue}" ]; then
+                                sValue="${sIp}"
+                            else
+                                sValue="${sValue},${sIp}"
+                            fi
+                        fi
                     done
                 fi
                 unset sIp
             fi
-            # get maybe a new one
-            sTempIPs="$(echo "$SSH_CLIENT" | awk '{ print $1 }')"
-            if [ -z "${sTempIPs}" ]; then
-                sTempIPs="$(who --ips | awk '{print $6}' | grep "^[0123456789]")"
-                if [ -z "${sTempIPs}" ]; then
-                    sTempIPs="$(who --ips | awk '{print $5}' | grep "^[0123456789]")"
-                fi
-            fi
-            if (! grep -q "${sTempIPs}" <<<"${sValue}"); then
-                if [ -z "${sValue}" ]; then
-                    sValue="${sTempIPs}"
-                else
-                    sValue="${sValue},${sTempIPs}"
-                fi
-            fi
         fi
+
         # confirm it
         while [ -z "${sCheckIp}" ] || [ -z "${sValue}" ]; do
             gfnQuestionGetString NO "$Questions_AddAddresses" gsMainUserIPs "${sValue}"
@@ -656,7 +643,7 @@ DisplaySurvey() {
             [ -n "${sCheckIp}" ] && sValue="${sCheckIp}"
             unset IFS sIp sTmp OIFS
         done
-        unset sValue sTempIPs sCheckIp
+        unset sValue sTempIPs sCheckIp sIp
 
         # Logwatch
         # if [ "${gbIsInstalled_LogWatch}" != "YES" ]; then
