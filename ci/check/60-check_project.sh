@@ -30,7 +30,7 @@
 
 if [ -z "${vars}" ] || [ "${vars}" -eq 0 ]; then
     # shellcheck source=ci/check/00-load_vars.bsh
-    source "$(dirname "$0")/00-libs.bsh"
+    . "/builds/${CI_PROJECT_PATH}/ci/check/00-libs.sh"
 else
     nReturn=${nReturn}
 fi
