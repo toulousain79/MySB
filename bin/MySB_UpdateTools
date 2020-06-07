@@ -127,6 +127,20 @@ if (! grep -q "${gsSystemCron}" /etc/cron.d/MySB_jobs_check); then
     gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/Cron" 'UPGRADE'
 fi
 
+#### OpenVPN CRL fix
+if [[ -d /etc/openvpn/easy-rsa ]] && [ "$(grep EASYRSA_CRL_DAYS /etc/openvpn/easy-rsa/vars | awk '{print $3}')" -ne 3650 ]; then
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/openvpn/easyrsa_vars.tmpl /etc/openvpn/easy-rsa/vars
+    sed -i "s/<servername>/${gsHostNameFqdn}/g;" /etc/openvpn/easy-rsa/vars
+    sed -i "s/<email_address>/${gsMainUserEmail}/g;" /etc/openvpn/easy-rsa/vars
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/openvpn/openssl-easyrsa.cnf.tmpl /etc/openvpn/easy-rsa/openssl-easyrsa.cnf
+    sed -i "s/<servername>/${gsHostNameFqdn}/g;" /etc/openvpn/easy-rsa/openssl-easyrsa.cnf
+    sed -i "s/<email_address>/${gsMainUserEmail}/g;" /etc/openvpn/easy-rsa/openssl-easyrsa.cnf
+    if cd /etc/openvpn/easy-rsa/; then
+        ./easyrsa gen-crl
+        gfnManageServices restart "openvpn"
+    fi
+fi
+
 # -----------------------------------------
 # shellcheck source=inc/includes_after
 . "$(dirname "$0")"/../inc/includes_after
