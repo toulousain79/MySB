@@ -96,7 +96,7 @@ if [ -e "${FileLock}" ]; then # Check that the lock file has not been forgotten.
     nPid="$(cat "${FileLock}")"
     case "$(ps -p "${nPid}" &>/dev/null)" in
         0) exit 0 ;; # The script is still running, the lock file is legitimate. We can stop the script.
-        *) # Otherwise, we remove it and continue running the script.
+        *)           # Otherwise, we remove it and continue running the script.
             rm -f "${FileLock}"
             if [ -e "/tmp/${UserName}-${ScriptName}.log.${nPid}" ]; then
                 rm -f "/tmp/${UserName}-${ScriptName}.log.${nPid}"
@@ -108,7 +108,7 @@ if [ -e "${FileLock}" ]; then # Check that the lock file has not been forgotten.
             fi
             ;;
     esac
-else # No file locking, we continue.
+else                                # No file locking, we continue.
     if [ "${InQueue}" -eq 0 ]; then # The list is empty, there is nothing to do. So we stop the script.
         exit 0
     else # Otherwise, we continue and create a new lock file.
@@ -119,7 +119,8 @@ fi
 ############ FUNCTIONs - BoF ############
 #### Retrieving files to transfer
 fnListing() {
-    local nListId sGetBasePath sGetCustom1 sGetName sMailObject sSubDirectory dStartDate dStartHour nPid sLocalSize sRemoteSize sDstDir sRemoteDestination nError
+    local nListId dStartDate dStartHour nPid nError bCreateNfo
+    local sGetBasePath sGetCustom1 sGetName sMailObject sSubDirectory sLocalSize sRemoteSize sDstDir sRemoteDestination sFileName sMediaFile
 
     # VARs
     nListId="${1}"
@@ -131,6 +132,7 @@ fnListing() {
     sLocalSize=0
     sRemoteSize=1
     nError=0
+    bCreateNfo=0
     sMailObject="${MailObjectOK}"
     nPid="$(cat "${FileLock}")"
 
@@ -154,21 +156,42 @@ fnListing() {
     sDstDir="$(echo "${sDstDir}" | sed "s/\[//g;s/\]//g;s/(//g;s/)//g;s/\ /./g;s/,/./g;s/'/./g;")"
     sRemoteDestination="$(echo "${sDstDir}/${sGetName}" | sed "s/\[//g;s/\]//g;s/(//g;s/)//g;s/\ /./g;s/,/./g;s/'/./g;")"
 
+    # NFO
+    # if { [ -f "${sGetBasePath}" ] && [ "${CreateSubDir}" -eq 1 ]; }; then
+    #     sMediaFile="${sGetBasePath}"
+    #     sFileName="$(basename -- "${sGetBasePath}")"
+    #     if [ "${sFileName##*.}" == "mkv" ]; then
+    #         sNfoFile="${sFileName//.mkv/.nfo}"
+    #         bCreateNfo=1
+    #     fi
+    # elif [ -d "${sGetBasePath}" ]; then
+    #     sMediaFile="${sGetBasePath}/*.mkv"
+    #     sNfoFile="${sGetBasePath}.nfo"
+    #     bCreateNfo=1
+    # fi
+
+    # if [[ ${bCreateNfo} -eq 1 ]]; then
+    #     mediainfo "${sMediaFile}" --LogFile=/tmp/"${sNfoFile}" >/dev/null
+    # fi
+
     # Check local file or directory size
     sLocalSize="$(du -hsb "${sGetBasePath}" | awk '{ print $1 }' | sed 's/,/./g;')"
 
     # Log
     echo "#### START ####"
-    echo "Script:		$0"
-    echo "From:		${sGetBasePath}"
-    echo "To:		${sDstDir}"
-    echo "Size:		${sLocalSize} (local)"
-    echo "Category:	${sGetCustom1} (${CategoryList})"
-    echo "User:		${RemoteUser}"
-    echo "Server:		${RemoteSrv}"
-    echo "Protocol:		${ModeSync}"
-    echo "Date:		${dStartDate}"
-    echo "Hour:		${dStartHour}"
+    echo "Script:   $0"
+    echo "From:     ${sGetBasePath}"
+    # if [[ ${bCreateNfo} -eq 1 ]] && [ -f /tmp/"${sNfoFile}" ]; then
+    #     echo "NFO:      /tmp/${sNfoFile}"
+    # fi
+    echo "To:       ${sDstDir}"
+    echo "Size:     ${sLocalSize} (local)"
+    echo "Category: ${sGetCustom1} (${CategoryList})"
+    echo "User:     ${RemoteUser}"
+    echo "Server:   ${RemoteSrv}"
+    echo "Protocol: ${ModeSync}"
+    echo "Date:     ${dStartDate}"
+    echo "Hour:     ${dStartHour}"
     echo "--------------------"
     echo
 
@@ -181,6 +204,9 @@ fnListing() {
 
             # Start synchronization with RSYNC
             for ((i = 3; i >= 1; i -= 1)); do
+                # if [[ ${bCreateNfo} -eq 1 ]] && [ -f /tmp/"${sNfoFile}" ]; then
+                #     rsync -rtvyz --numeric-ids --partial --append --stats --timeout=10 -e "/usr/bin/sshpass -p${RemotePass} ssh -p ${RemotePort} -c ${RsyncCipher} -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "/tmp/${sNfoFile}" "${RemoteUser}@${RemoteSrv}:${sDstDir}/"
+                # fi
                 rsync -rtvyz --numeric-ids --partial --append --stats --timeout=10 -e "/usr/bin/sshpass -p${RemotePass} ssh -p ${RemotePort} -c ${RsyncCipher} -o Compression=yes -x -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" "${sGetBasePath}" "${RemoteUser}@${RemoteSrv}:${sDstDir}/"
                 nError=$?
                 # Check remote file or directory size
@@ -194,6 +220,10 @@ fnListing() {
         'ftp')
             LftpOptions="set ftp:ssl-protect-data true; set ssl:verify-certificate no; set net:max-retries 3; set net:reconnect-interval-base 5;"
             for ((i = 3; i >= 1; i -= 1)); do
+                # if [[ ${bCreateNfo} -eq 1 ]] && [ -f /tmp/"${sNfoFile}" ]; then
+                #     lftp -e "${LftpOptions} mkdir -p ${sDstDir}; put -c -O \"${sDstDir}\" \"/tmp/${sNfoFile}\"; bye" -u "${RemoteUser}","${RemotePass}" "${RemoteSrv}" -p "${RemotePort}"
+                # fi
+
                 case "${Type}" in
                     'directory')
                         lftp -e "${LftpOptions} mkdir -p \"${sDstDir}\"; mirror -c -R \"${sGetBasePath}\" \"${sDstDir}\"; bye" -u "${RemoteUser}","${RemotePass}" "${RemoteSrv}" -p "${RemotePort}"
@@ -215,6 +245,11 @@ fnListing() {
         *) return 1 ;;
     esac
 
+    # Delete NFO file
+    # if [[ ${bCreateNfo} -eq 1 ]] && [ -f /tmp/"${sNfoFile}" ]; then
+    #     rm -f /tmp/"${sNfoFile}"
+    # fi
+
     # Deleting the file from the list
     FnEndDate="$(/bin/date +%Y/%m/%d)"
     FnEndHour="$(/bin/date +%H:%M:%S)"
@@ -231,9 +266,9 @@ fnListing() {
 
     echo
     echo "--------------------"
-    echo "Size:		${sRemoteSize} (remote)"
-    echo "Date:		${FnEndDate}"
-    echo "Hour:		${FnEndHour}"
+    echo "Size:     ${sRemoteSize} (remote)"
+    echo "Date:     ${FnEndDate}"
+    echo "Hour:     ${FnEndHour}"
     echo "##### END #####"
 
     # E-mail notification
