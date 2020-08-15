@@ -23,7 +23,7 @@ LOCK TABLES `blocklists` WRITE;
 /*!40000 ALTER TABLE `blocklists` DISABLE KEYS */;
 INSERT INTO `blocklists` (`author`, `list_name`, `list_id`, `infos_url`, `list_url`, `subscription`, `default`, `enable`, `comments`, `lastupdate`) VALUES
 ("Atma", "Atma", "tzmtqbbsgbtfxainogvm", "https://www.iblocklist.com/list.php?list=tzmtqbbsgbtfxainogvm", "http://list.iblocklist.com/?list=tzmtqbbsgbtfxainogvm&fileformat=p2p&archiveformat=gz", "false", 1, 1, "", "0000-00-00 00:00:00"),
-("Bluetack", "Webexploit Forumspam", "bimsvyvtgxeelunveyal", "https://www.iblocklist.com/list.php?list=bimsvyvtgxeelunveyal", "http://list.iblocklist.com/?list=bimsvyvtgxeelunveyal&fileformat=p2p&archiveformat=gz", "false", 1, 1, "", "0000-00-00 00:00:00"),
+("Bluetack", "Webexploit Forumspam", "bimsvyvtgxeelunveyal", "https://www.iblocklist.com/list.php?list=bimsvyvtgxeelunveyal", "http://list.iblocklist.com/?list=bimsvyvtgxeelunveyal&fileformat=p2p&archiveformat=gz", "false", 0, 0, "", "0000-00-00 00:00:00"),
 ("DCHubAd", "Faker", "dhuwlruzmglnfaneeizx", "https://www.iblocklist.com/list.php?list=dhuwlruzmglnfaneeizx", "http://list.iblocklist.com/?list=dhuwlruzmglnfaneeizx&fileformat=p2p&archiveformat=gz", "false", 1, 1, "", "0000-00-00 00:00:00"),
 ("DCHubAd", "Hacker", "qpuabqfzsykfvglktzkh", "https://www.iblocklist.com/list.php?list=qpuabqfzsykfvglktzkh", "http://list.iblocklist.com/?list=qpuabqfzsykfvglktzkh&fileformat=p2p&archiveformat=gz", "false", 1, 1, "", "0000-00-00 00:00:00"),
 ("DCHubAd", "Pedophiles", "zchgtvitlwnwcjfuxovf", "https://www.iblocklist.com/list.php?list=zchgtvitlwnwcjfuxovf", "http://list.iblocklist.com/?list=zchgtvitlwnwcjfuxovf&fileformat=p2p&archiveformat=gz", "false", 1, 1, "", "0000-00-00 00:00:00"),
