@@ -7,11 +7,11 @@
 #
 VERSION="1.2.2"
 
-SCRIPT_NAME="$(command basename ${0})"
+SCRIPT_NAME="$(command basename "${0}")"
 
 # Print this script help.
-function usage {
-  command echo "Backup Manager tools v${VERSION}
+function usage() {
+    command echo "Backup Manager tools v${VERSION}
 This tool ease Backup Manager administration from command line.
 
 Usage :
@@ -27,10 +27,8 @@ Usage :
   * remove path : Remove the given path from backup targets.
 "
 
-  test -n "${1}" && exit ${1}
+    test -n "${1}" && exit ${1}
 } # usage
-
-
 
 # Get the absolute path for a file or directory.
 #
@@ -38,12 +36,10 @@ Usage :
 #
 # @return ${REALPATH} A absolute path.
 REALPATH=""
-function realpath {
-  command test ${#} -ne 1 && exit 1
-  REALPATH=$(/bin/readlink -f "${1}")
+function realpath() {
+    command test ${#} -ne 1 && exit 1
+    REALPATH=$(/bin/readlink -f "${1}")
 } # realpath
-
-
 
 # Check if a binary is present
 #
@@ -51,33 +47,31 @@ function realpath {
 # @param string $package The package the binary come from.
 #
 # @return Exit with error if the binary is missing.
-function check_binary {
-  command test ${#} -ne 2 && exit 1
+function check_binary() {
+    command test ${#} -ne 2 && exit 1
 
-  # Test the binary presence.
-  if [ -z "$(which "${1}")" ]; then
-	echo "Error : '${1}' is missing. Please install package '${2}'." >&2
-	exit 1
-  fi
+    # Test the binary presence.
+    if [ -z "$(which "${1}")" ]; then
+        echo "Error : '${1}' is missing. Please install package '${2}'." >&2
+        exit 1
+    fi
 } # check_binary
-
 
 # Compute the backup targets array ids.
 #
 # @return void
-function fix_targets_ids {
-  COUNTER=0
-  for LINE_NUMBER in $(command grep --line-number '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' \
-		  | command cut --delimiter=':' --fields=1); do
+function fix_targets_ids() {
+    COUNTER=0
+    for LINE_NUMBER in $(command grep --line-number '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' |
+        command cut --delimiter=':' --fields=1); do
 
-	command sed -i \
-		-e "${LINE_NUMBER}s/^BM_TARBALL_TARGETS\[[0-9]*\]/BM_TARBALL_TARGETS[${COUNTER}]/" \
-		'/etc/MySB/BM_MySB.conf'
+        command sed -i \
+            -e "${LINE_NUMBER}s/^BM_TARBALL_TARGETS\[[0-9]*\]/BM_TARBALL_TARGETS[${COUNTER}]/" \
+            '/etc/MySB/BM_MySB.conf'
 
-	COUNTER=$((${COUNTER} + 1))
-  done
+        COUNTER=$((COUNTER + 1))
+    done
 } # fix_targets_ids
-
 
 # Check for binaries presence
 check_binary "basename" "coreutils"
@@ -93,101 +87,88 @@ command test ! -e '/etc/MySB/BM_MySB.conf' && exit 1
 command test ${#} -eq 0 && usage 1
 
 case "${1}" in
+    list)
+        command grep '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' |
+            command sed -e 's/^.*TARGETS\[\([^]]*\)\]="\([^"]*\)".*$/\1 : \2/'
+        exit 0
+        ;;
+    cleanup)
+        command grep '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' |
+            command sed -e 's/^.*="\([^"]*\)".*$/\1/' |
+            command xargs -rI TARGET sh -c "test ! -e 'TARGET' && echo 'TARGET'" |
+            command xargs -rI TARGET "${0}" remove 'TARGET'
+        exit 0
+        ;;
+    add)
+        # Check if valid number of arguments given (1).
+        command test ${#} -ne 2 && usage
 
-  list )
-	command grep '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' \
-		| command sed -e 's/^.*TARGETS\[\([^]]*\)\]="\([^"]*\)".*$/\1 : \2/'
-	exit 0
-	;;
+        realpath "${2}"
+        TARGET_PATH="${REALPATH}"
 
+        if [ -z "$(command grep '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' |
+            command sed -e 's/^.*="\([^"]*\)".*$/\1/' |
+            command grep "${TARGET_PATH}")" ]; then
 
-
-  cleanup )
-	command grep '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' \
-		| command sed -e 's/^.*="\([^"]*\)".*$/\1/' \
-		| command xargs -rI TARGET sh -c "test ! -e 'TARGET' && echo 'TARGET'" \
-		| command xargs -rI TARGET ${0} remove 'TARGET'
-	exit 0
-	;;
-
-
-
-  add )
-	# Check if valid number of arguments given (1).
-	command test ${#} -ne 2 && usage
-
-	realpath "${2}"
-	TARGET_PATH="${REALPATH}"
-
-	if [ -z "$(command grep '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' \
-		| command sed -e 's/^.*="\([^"]*\)".*$/\1/' \
-		| command grep "${TARGET_PATH}")" ]; then
-
-	  command sed -i -e "/^export BM_TARBALL_TARGETS/i\
+            command sed -i -e "/^export BM_TARBALL_TARGETS/i\
 BM_TARBALL_TARGETS[]=\"${TARGET_PATH}\"" \
-		  '/etc/MySB/BM_MySB.conf'
+                '/etc/MySB/BM_MySB.conf'
 
-	  # Fix array numbers.
-	  fix_targets_ids
+            # Fix array numbers.
+            fix_targets_ids
 
-	  echo "Path '${TARGET_PATH}' added to backup targets."
-	else
-	  echo "Path '${TARGET_PATH}' is already a backup target."
-	fi
+            echo "Path '${TARGET_PATH}' added to backup targets."
+        else
+            echo "Path '${TARGET_PATH}' is already a backup target."
+        fi
 
-	exit 0
-	;;
+        exit 0
+        ;;
+    remove)
+        # Check if valid number of arguments given (1).
+        command test ${#} -ne 2 && usage
 
+        ORIGINAL_PATH="${2}"
+        realpath "${ORIGINAL_PATH}"
+        TARGET_PATH="${REALPATH}"
 
+        if [ -n "${TARGET_PATH}" ] && [ -n "$(command grep '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' |
+            command sed -e 's/^.*="\([^"]*\)".*$/\1/' |
+            command grep "${TARGET_PATH}")" ]; then
 
-  remove )
-	# Check if valid number of arguments given (1).
-	command test ${#} -ne 2 && usage
+            command grep --line-number "BM_TARBALL_TARGETS\[.*[\"']${TARGET_PATH}[\"']" '/etc/MySB/BM_MySB.conf' |
+                command cut --delimiter=':' --fields=1 |
+                command xargs --no-run-if-empty -iLINE sed -i -e "LINEd" \
+                    '/etc/MySB/BM_MySB.conf'
 
-	ORIGINAL_PATH="${2}"
-	realpath "${ORIGINAL_PATH}"
-	TARGET_PATH="${REALPATH}"
+            # Fix array numbers.
+            fix_targets_ids
 
-	if [ -n "${TARGET_PATH}" ] && [ -n "$(command grep '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' \
-		| command sed -e 's/^.*="\([^"]*\)".*$/\1/' \
-		| command grep "${TARGET_PATH}")" ]; then
+            echo "Path '${TARGET_PATH}' removed from backup targets."
 
-	  command grep --line-number "BM_TARBALL_TARGETS\[.*[\"']${TARGET_PATH}[\"']" '/etc/MySB/BM_MySB.conf' \
-		  | command cut --delimiter=':' --fields=1 \
-		  | command xargs --no-run-if-empty -iLINE sed -i -e "LINEd" \
-			  '/etc/MySB/BM_MySB.conf'
+        elif [ -n "${ORIGINAL_PATH}" ] && [ -n "$(command grep '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' |
+            command sed -e 's/^.*="\([^"]*\)".*$/\1/' |
+            command grep "${ORIGINAL_PATH}")" ]; then
 
-	  # Fix array numbers.
-	  fix_targets_ids
+            command grep --line-number "BM_TARBALL_TARGETS\[.*[\"']${ORIGINAL_PATH}[\"']" '/etc/MySB/BM_MySB.conf' |
+                command cut --delimiter=':' --fields=1 |
+                command xargs --no-run-if-empty -iLINE sed -i -e "LINEd" \
+                    '/etc/MySB/BM_MySB.conf'
 
-	  echo "Path '${TARGET_PATH}' removed from backup targets."
+            # Fix array numbers.
+            fix_targets_ids
 
-	elif [ -n "${ORIGINAL_PATH}" ] && [ -n "$(command grep '^BM_TARBALL_TARGETS\[' '/etc/MySB/BM_MySB.conf' \
-		| command sed -e 's/^.*="\([^"]*\)".*$/\1/' \
-		| command grep "${ORIGINAL_PATH}")" ]; then
+            echo "Path '${ORIGINAL_PATH}' removed from backup targets."
+        else
+            echo "Path '${ORIGINAL_PATH}' is not a backup target."
+        fi
 
-	  command grep --line-number "BM_TARBALL_TARGETS\[.*[\"']${ORIGINAL_PATH}[\"']" '/etc/MySB/BM_MySB.conf' \
-		  | command cut --delimiter=':' --fields=1 \
-		  | command xargs --no-run-if-empty -iLINE sed -i -e "LINEd" \
-			  '/etc/MySB/BM_MySB.conf'
-
-	  # Fix array numbers.
-	  fix_targets_ids
-
-	  echo "Path '${ORIGINAL_PATH}' removed from backup targets."
-	else
-	  echo "Path '${ORIGINAL_PATH}' is not a backup target."
-	fi
-
-	exit 0
-	;;
-
-
-
-  * )
-	echo "Error : '${1}' is not a valid action." >&2
-	usage 1
-	;;
+        exit 0
+        ;;
+    *)
+        echo "Error : '${1}' is not a valid action." >&2
+        usage 1
+        ;;
 esac
 
 exit 0
