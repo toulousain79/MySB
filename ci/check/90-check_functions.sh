@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2154
 # ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
@@ -26,7 +27,7 @@ nReturn=${nReturn}
 [[ ${nReturn} -gt 0 ]] && exit "${nReturn}"
 
 if [ -z "${vars}" ] || [ "${vars}" -eq 0 ]; then
-    # shellcheck source=ci/check/00-load_vars.bsh
+    # shellcheck source=ci/check/00-libs.sh
     . "/builds/${CI_PROJECT_PATH}/ci/check/00-libs.sh"
 else
     nReturn=${nReturn}
