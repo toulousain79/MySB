@@ -262,7 +262,7 @@ gfnPeerGuardianGenerateBlocklists() {
 
                 # Cleaning
                 rm -f "${MySB_InstallDir}/temp/pglcmd_update.log"
-                rm -f "${MySB_InstallDir}/temp/pglcmd_update_new.log"
+                rm -f "${MySB_InstallDir}/temp/pglcmd_update_formated.log"
                 rm -f "${MySB_InstallDir}/temp/blocklists.list"
 
                 # 1/ Creating of active lists file
@@ -274,33 +274,34 @@ gfnPeerGuardianGenerateBlocklists() {
 
                 # 2/ Doing update of this lists with a clean log file
                 mv -f /var/log/pgl/pglcmd.log /var/log/pgl/pglcmd.log.backup
-                if (! pglcmd update >>"${MySB_InstallDir}/temp/pglcmd_update.log"); then
-                    cp /etc/pgl/blocklists.backup /etc/pgl/blocklists.list
-                    sed -i '/^#/d;/^$/d' /etc/pgl/blocklists.list
-                    cmdMySQL "${gsblocklists_DB}" "UPDATE blocklists SET enable='0' WHERE 1;" ${bVerbose}
-                    cmdMySQL 'MySB_db' "UPDATE blocklists SET enable='0' WHERE 1;" ${bVerbose}
-                    while read -r sLine; do
-                        if [ -n "$(cmdMySQL 'MySB_db' "SELECT id_blocklists FROM blocklists WHERE list_url='${sLine}';")" ]; then
-                            sDbToUpdate="MySB_db"
-                        else
-                            sDbToUpdate="${gsblocklists_DB}"
-                        fi
-                        cmdMySQL "${sDbToUpdate}" "UPDATE blocklists SET enable='1' WHERE list_url='${sLine}';" ${bVerbose}
-                    done </etc/pgl/blocklists.list
-                    # Force update with current validated lists
-                    pglcmd restart
-                    rm -f /var/log/pgl/pglcmd.log
-                    rm -f "${MySB_InstallDir}/temp/pglcmd_update.log"
-                    pglcmd update >>"${MySB_InstallDir}/temp/pglcmd_update.log"
-                fi
+                pglcmd update >>"${MySB_InstallDir}/temp/pglcmd_update.log"
+                # if (! pglcmd update >>"${MySB_InstallDir}/temp/pglcmd_update.log"); then
+                #     cp /etc/pgl/blocklists.backup /etc/pgl/blocklists.list
+                #     sed -i '/^#/d;/^$/d' /etc/pgl/blocklists.list
+                #     cmdMySQL "${gsblocklists_DB}" "UPDATE blocklists SET enable='0' WHERE 1;" ${bVerbose}
+                #     cmdMySQL 'MySB_db' "UPDATE blocklists SET enable='0' WHERE 1;" ${bVerbose}
+                #     while read -r sLine; do
+                #         if [ -n "$(cmdMySQL 'MySB_db' "SELECT id_blocklists FROM blocklists WHERE list_url='${sLine}';")" ]; then
+                #             sDbToUpdate="MySB_db"
+                #         else
+                #             sDbToUpdate="${gsblocklists_DB}"
+                #         fi
+                #         cmdMySQL "${sDbToUpdate}" "UPDATE blocklists SET enable='1' WHERE list_url='${sLine}';" ${bVerbose}
+                #     done </etc/pgl/blocklists.list
+                #     # Force update with current validated lists
+                #     pglcmd restart
+                #     # rm -f /var/log/pgl/pglcmd.log
+                #     # rm -f "${MySB_InstallDir}/temp/pglcmd_update.log"
+                #     pglcmd update >>"${MySB_InstallDir}/temp/pglcmd_update.log"
+                # fi
 
                 # 3/ Generating formated update result log
                 while read -r sLine; do
                     if (grep -q '&amp' <<<"${sLine}"); then
-                        echo -n "${sLine}" >>"${MySB_InstallDir}/temp/pglcmd_update_new.log"
-                        perl -pi -e "s/&amp/&/g" "${MySB_InstallDir}/temp/pglcmd_update_new.log"
+                        echo -n "${sLine}" >>"${MySB_InstallDir}/temp/pglcmd_update_formated.log"
+                        perl -pi -e "s/&amp/&/g" "${MySB_InstallDir}/temp/pglcmd_update_formated.log"
                     else
-                        echo "${sLine}" >>"${MySB_InstallDir}/temp/pglcmd_update_new.log"
+                        echo "${sLine}" >>"${MySB_InstallDir}/temp/pglcmd_update_formated.log"
                     fi
                 done <"${MySB_InstallDir}/temp/pglcmd_update.log"
 
@@ -317,7 +318,7 @@ gfnPeerGuardianGenerateBlocklists() {
                 #         fi
                 #         aUpdateIdList+=("${sUpdateId}")
                 #     fi
-                # done <"${MySB_InstallDir}/temp/pglcmd_update_new.log"
+                # done <"${MySB_InstallDir}/temp/pglcmd_update_formated.log"
                 sUpdateIdList="$(grep 'Extracting ' /var/log/pgl/pglcmd.log | cut -d ',' -f 1 | awk '{ print $2 }')"
                 for sUpdateId in ${sUpdateIdList}; do
                     if [[ ${bDisplayFn} -eq 0 ]]; then
@@ -361,9 +362,9 @@ gfnPeerGuardianGenerateBlocklists() {
                             cmdMySQL "${sDbToUpdate}" "UPDATE blocklists SET lastupdate='${dDateHour}' WHERE update_id='${sUpdateId}';" ${bVerbose}
                         fi
                         ((nCount++))
-                    done < <(grep 'last modified:' "${MySB_InstallDir}/temp/pglcmd_update_new.log" | sed 's/)/:00/g;')
+                    done < <(grep 'last modified:' "${MySB_InstallDir}/temp/pglcmd_update_formated.log" | sed 's/)/:00/g;')
 
-                    # grep 'last modified:' "${MySB_InstallDir}/temp/pglcmd_update_new.log" | sed 's/)/:00/g;' | while read -r sLine; do
+                    # grep 'last modified:' "${MySB_InstallDir}/temp/pglcmd_update_formated.log" | sed 's/)/:00/g;' | while read -r sLine; do
                     #     dDateHour="$(echo "${sLine}" | sed 's/modified:/#/g;' | cut -d "#" -f 2 | sed 's/^ //g;')"
                     #     sUpdateId="$(echo "${sLine}" | awk '{ print $1 }')"
 
