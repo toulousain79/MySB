@@ -1,5 +1,17 @@
 # Changelog
 
+## v7.3 - xxxx/xx/xx _(started at: 2020/11/09)_
+
+- NextCloud v19.0.4
+- NetData v1.26.0
+- GeoIPupdate v4.5.0
+- Medoo v1.7.10
+- Composer v2.0.6
+- Goofys v0.24.0
+- ruTorrent v3.10 _(3d3960b)_
+- Lynis v3.0.0
+- CTop v0.7.5
+
 ## v7.2 - 2020/01/26 _(started at: 2019/10/03)_
 
 - NextCloud v18.0.0
