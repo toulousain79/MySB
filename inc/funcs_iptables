@@ -43,6 +43,7 @@ sLabelSamba='Samba over OpenVPN'
 sLabelOvpnGwUsers='OpenVPN with GW for users'
 sLabelOvpnNoGwUsers='OpenVPN without GW for users'
 sLabelOvpnBridgeUsers='OpenVPN bridged without GW for users'
+sLabelLetsEncrypt='Lets Encrypt HTTP'
 
 gfnFlushingIptables() {
     # Reset Default Policies
@@ -826,13 +827,15 @@ gfnPopulatingTcpInboundChain() {
     esac
 
     #### Let's Encrypt
-    sed -i '/Lets Encrypt HTTP/d' "${MySB_InstallDir}"/temp/current-iptables-rules
+    if [[ -f "${MySB_InstallDir}"/temp/current-iptables-rules ]]; then
+        sed -i "/${sLabelLetsEncrypt}/d" "${MySB_InstallDir}"/temp/current-iptables-rules
+    fi
     case "${1}" in
         "letsencrypt")
             bLetsEncryptOpenPort="$(cmdMySQL 'MySB_db' "SELECT letsencrypt_openport FROM system WHERE id_system='1';")"
             if [ "${bLetsEncryptOpenPort}" -eq 1 ]; then
                 nNumLine=$(grep -i '\-A tcp_inbound -p tcp -j RETURN' -n -m 1 "${MySB_InstallDir}"/temp/current-iptables-rules | cut -d ':' -f 1)
-                sed -i "${nNumLine}i\-A tcp_inbound -s 0/0 -i ${gsPrimaryInet} -p tcp -m tcp --dport 80 -m comment --comment \"Lets Encrypt HTTP\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
+                sed -i "${nNumLine}i\-A tcp_inbound -s 0/0 -i ${gsPrimaryInet} -p tcp -m tcp --dport 80 -m comment --comment \"${sLabelLetsEncrypt}\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
             fi
             ;;
     esac
