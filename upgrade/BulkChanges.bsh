@@ -65,31 +65,6 @@ case "${1}" in
         #### To call for every upgrade - EoF
         ####################################
 
-        #### rTorrent cleaning
-        # aAllPackages=(rtorrent buildtorrent mktorrent mediainfo ffmpeg libcppunit-dev zlib1g-dev libncursesw5-dev libxmlrpc-c++8-dev)
-        # gfnPackagesManage purge "${aAllPackages[@]}"
-
-        #### ruTorrent proxy users port
-        nProxyPort="$(cmdMySQL 'MySB_db' "SELECT max(proxy_port) FROM users;")"
-        [ -z "${nProxyPort}" ] && nProxyPort=8080
-        gfnListCountUsers 'normal'
-        for sUser in ${gsUsersList}; do
-            cmdMySQL 'MySB_db' "UPDATE users SET proxy_port='${nProxyPort}' WHERE users_ident='${sUser}';" -v
-            ((nProxyPort++))
-        done
-
-        #### Minio
-        usermod -s /usr/sbin/nologin minio
-
-        #### DNScrypt-proxy
-        gfnManageServices stop "dnscrypt-proxy"
-        cmdMySQL 'MySB_db' "UPDATE services SET to_install = '1' WHERE serv_name='DNScrypt-proxy';" -v
-        gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/DNScrypt" 'UPGRADE'
-        gfnManageServices start "dnscrypt-proxy"
-
-        #### Clean
-        rm -fv /var/log/samba/.log
-        rm -rfv "${MySB_InstallDir}"/web/logs/*
         ;;
 
     "AFTER" | "INIT")
