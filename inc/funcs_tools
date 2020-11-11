@@ -102,31 +102,35 @@ gfnStatistics() {
     # local sMachineId sStatsAllowed sResult sCountry
     local sMachineId sResult sCountry sMachineIdFile
 
-    if [ -f /etc/machine-id ]; then
+    if [[ -f /etc/machine-id ]]; then
         sMachineIdFile="/etc/machine-id"
-    elif [ -f /var/lib/dbus/machine-id ]; then
+    elif [[ -f /var/lib/dbus/machine-id ]]; then
         sMachineIdFile="/var/lib/dbus/machine-id"
     else
         dbus-uuidgen --ensure
         sMachineIdFile="/etc/machine-id"
     fi
 
-    if [ -f "${sMachineIdFile}" ]; then
-        if (gfnCheckCommand 0 geoiplookup) && [ -n "${gsSrvIpAddressExt}" ]; then
+    if [[ -f "${sMachineIdFile}" ]]; then
+        if (gfnCheckCommand 0 geoiplookup) && [[ -n "${gsSrvIpAddressExt}" ]]; then
             sCountry="$(geoiplookup "${gsSrvIpAddressExt}" | awk '{ print $5 }')"
-            [ -z "${sCountry}" ] && sCountry="unknown"
+            [[ -z "${sCountry}" ]] && sCountry="unknown"
         else
             sCountry="unknown"
         fi
 
-        if [ ! -f /.dockerenv ]; then
+        if [[ ! -f /.dockerenv ]]; then
             sMachineId="$(sha256sum <<<"${sMachineIdFile}" | awk '{ print $1 }')"
         else
             sMachineId="$(sha256sum <<<"tests integ" | awk '{ print $1 }')"
         fi
-        [ -f "${MySB_InstallDir}"/statistics ] && sStatsAllowed="$(cat "${MySB_InstallDir}"/statistics)" || sStatsAllowed="no_stats"
-        if [ -n "${sMachineId}" ] && [ "${sStatsAllowed}" != "no_stats" ]; then
-            [ -z "${sCountry}" ] && sCountry="unknown"
+        
+        sStatsAllowed="no_stats"
+        if [[ -f "${MySB_InstallDir}"/statistics ]]; then
+            sStatsAllowed="$(cat "${MySB_InstallDir}"/statistics)"
+        fi
+        if [[ -n "${sMachineId}" ]] && [[ "${sStatsAllowed}" != "no_stats" ]]; then
+            [[ -z "${sCountry}" ]] && sCountry="unknown"
             sResult="$(curl --silent --retry 1 -A 'MySB' --data "version=${gsCurrentVersion}&country=${sCountry}&machine_id=${sMachineId}" http://toulousain79.free.fr/statistics/)"
             (grep -q 'Statistics updated at' <<<"${sResult}") && echo "${sResult}" >"${MySB_InstallDir}"/statistics
         fi
