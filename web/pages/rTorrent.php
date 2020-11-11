@@ -36,6 +36,7 @@ if (isset($_POST['get_loaded_file'])) { $get_loaded_file = $_POST['get_loaded_fi
 // Tracker not allowed
 if (isset($_POST['privacy'])) { $privacy = $_POST['privacy']; }
 if (isset($_POST['trackermodeallowed'])) { $trackermodeallowed = $_POST['trackermodeallowed']; }
+if (isset($_POST['exit_code'])) { $exit_code = $_POST['exit_code']; }
 // New tracker added
 if (isset($_POST['tracker'])) { $tracker_address = $_POST['tracker']; }
 if (isset($_POST['tracker_domain'])) { $tracker_domain = $_POST['tracker_domain']; }
@@ -80,6 +81,7 @@ if ( ($rTorrentNotify == '1') && (!empty($UserMail)) ) {
 				$TrackerAllowed = "Tracker autoris&eacute;s:";
 				$TrackerAllowedPrivate = "priv&eacute;s seulement";
 				$TrackerAllowedPublic = "publiques & priv&eacute;s";
+				$ExitCode = "Code de l'erreur:";
 				break;
 
 			default:
@@ -90,6 +92,7 @@ if ( ($rTorrentNotify == '1') && (!empty($UserMail)) ) {
 				$TrackerAllowed = "Tracker allowed:";
 				$TrackerAllowedPrivate = "privates only";
 				$TrackerAllowedPublic = "publics & privates";
+				$ExitCode = "Error code:";
 		}
 	} elseif ( isset($tracker_address) ) {
 		switch ($Language) {
@@ -152,6 +155,9 @@ if ( ($rTorrentNotify == '1') && (!empty($UserMail)) ) {
 		}
 		if ( isset($tracker_domain) && ( $tracker_domain != '' ) ) {
 			$Content .= "$TrackerDomain $tracker_domain"."\r\n";
+		}
+		if ( isset($exit_code) && ( $exit_code != '' ) ) {
+			$Content .= "$ExitCode $exit_code"."\r\n";
 		}
 	}
 	$Headers  = "From: $MainUserEmail"."\r\n";
