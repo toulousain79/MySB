@@ -28,6 +28,8 @@
 ##################### FIRST LINE #####################################
 
 #### Include tools functions
+# shellcheck source=./inc/funcs_logging
+source "${MySB_InstallDir}"/inc/funcs_logging
 # shellcheck source=./inc/funcs_sql
 source "${MySB_InstallDir}"/inc/funcs_sql
 # shellcheck source=inc/funcs_tools
@@ -257,15 +259,37 @@ gfnManageServices() {
 
                             nNext=0
                             if gfnGetPid pglcmd; then
-                                log_daemon_msg "${Funcs_Restarting} PeerGuardian Linux"
-                                if (! pglcmd restart >/dev/null); then
-                                    gfnStatusLSB 1
+                                case "${RefreshSwitch}" in
+                                    --trackers)
+                                        log_daemon_msg "${Funcs_Reloading} PeerGuardian Linux"
+                                        if (pglcmd reload >/dev/null); then
+                                            gfnStatusLSB 0
+                                        else
+                                            gfnStatusLSB 1
 
-                                    log_daemon_msg "${Funcs_ForceStarting} PeerGuardian Linux"
-                                    if (! pglcmd force-restart >/dev/null); then
-                                        nNext=1
-                                    fi
-                                fi
+                                            log_daemon_msg "${Funcs_Restarting} PeerGuardian Linux"
+                                            if (pglcmd restart >/dev/null); then
+                                                gfnStatusLSB 0
+                                            else
+                                                log_daemon_msg "${Funcs_ForceStarting} PeerGuardian Linux"
+                                                if (! pglcmd force-restart >/dev/null); then
+                                                    nNext=1
+                                                fi
+                                            fi
+                                        fi
+                                        ;;
+                                    *)
+                                        log_daemon_msg "${Funcs_Restarting} PeerGuardian Linux"
+                                        if (! pglcmd restart >/dev/null); then
+                                            gfnStatusLSB 1
+
+                                            log_daemon_msg "${Funcs_ForceStarting} PeerGuardian Linux"
+                                            if (! pglcmd force-restart >/dev/null); then
+                                                nNext=1
+                                            fi
+                                        fi
+                                        ;;
+                                esac
                             else
                                 log_daemon_msg "${Funcs_Starting} PeerGuardian Linux"
                                 if (! pglcmd start >/dev/null); then
@@ -445,7 +469,7 @@ gfnQuestionGetString() {
     while [ ! "${NEWVAR1}" = "${NEWVAR2}" ] || [ -z "${NEWVAR1}" ]; do
         if [ "${ISPASSWORD}" == "YES" ]; then
             echo -e -n "${CBLUE}${LABEL}${CEND} ${CGREEN}"
-            read -r NEWVAR1
+            NEWVAR1="$(systemd-ask-password '')"
             echo -e -n "${CEND}"
         else
             if [ -z "${DEFAULT}" ]; then
@@ -484,7 +508,7 @@ gfnQuestionGetString() {
         else
             if [ "${ISPASSWORD}" == "YES" ]; then
                 echo -e -n "${CRED}${Global_Again} ${CEND}${CGREEN}"
-                read -r NEWVAR2
+                NEWVAR2="$(systemd-ask-password '')"
                 echo -e -n "${CEND}"
             else
                 echo -e -n "${CRED}${Global_Again} ${CEND}${CGREEN}"
