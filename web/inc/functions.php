@@ -553,6 +553,9 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 							case 'Restart_rTorrent':
 								$to_display .= Tooltip_Apply_RestartRtorrent;
 								break;
+							case 'Reload_rTorrent':
+								$to_display .= Tooltip_Apply_ReloadRtorrent;
+								break;
 							default:
 								break;
 						}
