@@ -48,6 +48,7 @@ define('Tooltip_Apply_Blocklists', 'Actualiser/Mettre &agrave; jour les listes d
 define('Tooltip_Apply_UpdateAddresses', 'Mettre &agrave; jour mes adresses<br />');
 define('Tooltip_Apply_UpdateMail', 'Mettre &agrave; jour les informations de messagerie<br />');
 define('Tooltip_Apply_RestartRtorrent', 'Relancer ma session rTorrent<br />');
+define('Tooltip_Apply_ReloadRtorrent', 'Recharger ma session rTorrent<br />');
 
 define('OpenVPN_SrvIpGw', '10.0.0.1');
 define('OpenVPN_SrvIp', '10.0.1.1');
