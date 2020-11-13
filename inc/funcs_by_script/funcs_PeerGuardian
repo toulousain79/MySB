@@ -518,7 +518,12 @@ EOF
 #### PeerGuardian Create all needed iptables complementary rules
 # Example: /usr/share/doc/pgld/examples/iptables-custom-insert.sh
 gfnPeerGuardianIptablesInsert() {
-    local sOvhIPv4 sResults sIPv4 nUID
+    local sOvhIPv4 sResults sIPv4 nUID sDNS MirrorsList sProto sURL sUrlUser sHostPort sHost sDomain
+    local gaDebianRepos MirrorsList sOvhIPv4 sIPv4 sResults nNumLine
+    local sRequestValues sTrackerInfos sTrackerId sTracker sTrackerProto sTrackerPort sTrackerProto
+    local bActiveOut
+
+    bActiveOut="$(grep -q '^#CHAINS' "${MySB_InstallDir}"/templates/peerguardian/etc.pgl.pglcmd.conf.tmpl && echo 1 || echo 0)"
 
     # Remove customs
     rm -f /etc/pgl/*.insert.sh
@@ -529,14 +534,16 @@ gfnPeerGuardianIptablesInsert() {
     echo "#!/bin/sh" >/etc/pgl/custom.insert.sh
 
     #### ICMP
-    {
-        echo
-        echo "# ICMP"
-        echo "iptables -I pgl_out -p icmp -j RETURN -m comment --comment \"ICMP OUT\""
-    } >>/etc/pgl/custom.insert.sh
+    if [[ ${bActiveOut} -eq 1 ]]; then
+        {
+            echo
+            echo "# ICMP"
+            echo "iptables -I pgl_out -p icmp -j RETURN -m comment --comment \"ICMP OUT\""
+        } >>/etc/pgl/custom.insert.sh
+    fi
 
     #### DNScrypt-proxy
-    if [ "${gbIsInstalled_DNScrypt}" == "YES" ]; then
+    if [[ ${bActiveOut} -eq 1 ]] && [ "${gbIsInstalled_DNScrypt}" == "YES" ]; then
         {
             echo
             echo "# DNScrypt-proxy"
@@ -551,76 +558,84 @@ gfnPeerGuardianIptablesInsert() {
     fi
 
     #### Publics DNS
-    {
-        echo
-        echo "# Publics DNS"
-    } >>/etc/pgl/custom.insert.sh
-    for sDNS in "${gaDnsList[@]}"; do
-        {
-            echo "iptables -I pgl_out -p tcp -d ${sDNS} --dport domain -j RETURN -m comment --comment \"OUTPUT TCP Publics DNS\""
-            echo "iptables -I pgl_out -p udp -d ${sDNS} --dport domain -j RETURN -m comment --comment \"OUTPUT UDP Publics DNS\""
-            echo "iptables -I pgl_out -p tcp -d ${sDNS} --dport domain-s -j RETURN -m comment --comment \"OUTPUT TCP Publics DNS\""
-            echo "iptables -I pgl_out -p udp -d ${sDNS} --dport domain-s -j RETURN -m comment --comment \"OUTPUT UDP Publics DNS\""
-        } >>/etc/pgl/custom.insert.sh
-    done
-
-    #### Stunnel
-    nUID="$(id -u stunnel4)"
-    if [ -n "${nUID}" ]; then
+    if [[ ${bActiveOut} -eq 1 ]]; then
         {
             echo
-            echo "# Stunnel"
+            echo "# Publics DNS"
         } >>/etc/pgl/custom.insert.sh
-        echo "iptables -I pgl_out -p tcp -j RETURN -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT TCP Stunnel\"" >>/etc/pgl/custom.insert.sh
+        for sDNS in "${gaDnsList[@]}"; do
+            {
+                echo "iptables -I pgl_out -p tcp -d ${sDNS} --dport domain -j RETURN -m comment --comment \"OUTPUT TCP Publics DNS\""
+                echo "iptables -I pgl_out -p udp -d ${sDNS} --dport domain -j RETURN -m comment --comment \"OUTPUT UDP Publics DNS\""
+                echo "iptables -I pgl_out -p tcp -d ${sDNS} --dport domain-s -j RETURN -m comment --comment \"OUTPUT TCP Publics DNS\""
+                echo "iptables -I pgl_out -p udp -d ${sDNS} --dport domain-s -j RETURN -m comment --comment \"OUTPUT UDP Publics DNS\""
+            } >>/etc/pgl/custom.insert.sh
+        done
+    fi
+
+    #### Stunnel
+    if [[ ${bActiveOut} -eq 1 ]]; then
+        nUID="$(id -u stunnel4)"
+        if [ -n "${nUID}" ]; then
+            {
+                echo
+                echo "# Stunnel"
+            } >>/etc/pgl/custom.insert.sh
+            echo "iptables -I pgl_out -p tcp -j RETURN -m owner --uid-owner ${nUID} -m comment --comment \"OUTPUT TCP Stunnel\"" >>/etc/pgl/custom.insert.sh
+        fi
     fi
 
     #### Debian repos
-    gaDebianRepos=(ftp.fr.debian.org ftp2.fr.debian.org security.debian.org)
-    if [ -f "${MySB_InstallDir}"/files/fastest_stable_mirrors ]; then
-        MirrorsList="$(grep 'http' "${MySB_InstallDir}"/files/fastest_stable_mirrors | sed -e 's/^ //g;s/\s+$//g;')"
-        for Mirror in ${MirrorsList}; do
-            sProto="$(echo "${Mirror}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')" # extract the protocol
-            sURL="${Mirror//${sProto}/}"
-            sUrlUser="$(echo "${sURL}" | grep @ | cut -d@ -f1)"                    # extract the user (if any)
-            sHostPort=$(echo "${sURL}" | sed -e s,"${sUrlUser}"@,,g | cut -d/ -f1) # extract the host and port
-            sHost="${sHostPort//:*/}"                                              # by request host without port
-            gaDebianRepos+=("${sHost}")
+    if [[ ${bActiveOut} -eq 1 ]]; then
+        gaDebianRepos=(ftp.fr.debian.org ftp2.fr.debian.org security.debian.org)
+        if [ -f "${MySB_InstallDir}"/files/fastest_stable_mirrors ]; then
+            MirrorsList="$(grep 'http' "${MySB_InstallDir}"/files/fastest_stable_mirrors | sed -e 's/^ //g;s/\s+$//g;')"
+            for Mirror in ${MirrorsList}; do
+                sProto="$(echo "${Mirror}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')" # extract the protocol
+                sURL="${Mirror//${sProto}/}"
+                sUrlUser="$(echo "${sURL}" | grep @ | cut -d@ -f1)"                    # extract the user (if any)
+                sHostPort=$(echo "${sURL}" | sed -e s,"${sUrlUser}"@,,g | cut -d/ -f1) # extract the host and port
+                sHost="${sHostPort//:*/}"                                              # by request host without port
+                gaDebianRepos+=("${sHost}")
+            done
+        fi
+        if [ -f "${MySB_InstallDir}"/files/fastest_testing_mirrors ]; then
+            MirrorsList="$(grep 'http' "${MySB_InstallDir}"/files/fastest_testing_mirrors | sed -e 's/^ //g;s/\s+$//g;')"
+            for Mirror in ${MirrorsList}; do
+                sProto="$(echo "${Mirror}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')" # extract the protocol
+                sURL="${Mirror//${sProto}/}"
+                sUrlUser="$(echo "${sURL}" | grep @ | cut -d@ -f1)"                    # extract the user (if any)
+                sHostPort=$(echo "${sURL}" | sed -e s,"${sUrlUser}"@,,g | cut -d/ -f1) # extract the host and port
+                sHost="${sHostPort//:*/}"                                              # by request host without port
+                gaDebianRepos+=("${sHost}")
+            done
+        fi
+        if [ "${gbToInstall_Webmin}" == "YES" ] || [ "${gbIsInstalled_Webmin}" == "YES" ]; then
+            gaDebianRepos+=(download.webmin.com)
+        fi
+        if [ "${gsServerProvider}" == "HETZNER" ]; then
+            gaDebianRepos+=(mirror.hetzner.de)
+        fi
+        {
+            echo
+            echo "# Debian repos"
+        } >>/etc/pgl/custom.insert.sh
+        for sDomain in "${gaDebianRepos[@]}"; do
+            echo "iptables -I pgl_out -p tcp -d ${sDomain} --dport 80 -j RETURN -m comment --comment \"OUTPUT TCP Debian repo\"" >>/etc/pgl/custom.insert.sh
         done
     fi
-    if [ -f "${MySB_InstallDir}"/files/fastest_testing_mirrors ]; then
-        MirrorsList="$(grep 'http' "${MySB_InstallDir}"/files/fastest_testing_mirrors | sed -e 's/^ //g;s/\s+$//g;')"
-        for Mirror in ${MirrorsList}; do
-            sProto="$(echo "${Mirror}" | grep '://' | sed -e's,^\(.*://\).*,\1,g')" # extract the protocol
-            sURL="${Mirror//${sProto}/}"
-            sUrlUser="$(echo "${sURL}" | grep @ | cut -d@ -f1)"                    # extract the user (if any)
-            sHostPort=$(echo "${sURL}" | sed -e s,"${sUrlUser}"@,,g | cut -d/ -f1) # extract the host and port
-            sHost="${sHostPort//:*/}"                                              # by request host without port
-            gaDebianRepos+=("${sHost}")
-        done
-    fi
-    if [ "${gbToInstall_Webmin}" == "YES" ] || [ "${gbIsInstalled_Webmin}" == "YES" ]; then
-        gaDebianRepos+=(download.webmin.com)
-    fi
-    if [ "${gsServerProvider}" == "HETZNER" ]; then
-        gaDebianRepos+=(mirror.hetzner.de)
-    fi
-    {
-        echo
-        echo "# Debian repos"
-    } >>/etc/pgl/custom.insert.sh
-    for sDomain in "${gaDebianRepos[@]}"; do
-        echo "iptables -I pgl_out -p tcp -d ${sDomain} --dport 80 -j RETURN -m comment --comment \"OUTPUT TCP Debian repo\"" >>/etc/pgl/custom.insert.sh
-    done
 
     #### Needed domains
-    {
-        echo
-        echo "# Needed domains"
-    } >>/etc/pgl/custom.insert.sh
-    for sDomain in "${gsUrlCheckList[@]}" "${gaNeededDomains[@]}"; do
-        sDomain="$(echo "${sDomain}" | cut -d '/' -f 1)"
-        echo "iptables -I pgl_out -p tcp -d ${sDomain} -j RETURN -m comment --comment \"OUTPUT TCP Needed domain\"" >>/etc/pgl/custom.insert.sh
-    done
+    if [[ ${bActiveOut} -eq 1 ]]; then
+        {
+            echo
+            echo "# Needed domains"
+        } >>/etc/pgl/custom.insert.sh
+        for sDomain in "${gsUrlCheckList[@]}" "${gaNeededDomains[@]}"; do
+            sDomain="$(echo "${sDomain}" | cut -d '/' -f 1)"
+            echo "iptables -I pgl_out -p tcp -d ${sDomain} -j RETURN -m comment --comment \"OUTPUT TCP Needed domain\"" >>/etc/pgl/custom.insert.sh
+        done
+    fi
 
     #### Monitoring
     if [ -n "${gsServerProvider}" ] && [ "${gsServerProvider}" != "${Global_None}" ]; then
@@ -655,7 +670,7 @@ gfnPeerGuardianIptablesInsert() {
         echo "# ruTorrent plugins"
     } >>/etc/pgl/custom.insert.sh
     # showip
-    if [ -f "${gsRutorrentPluginsDir}"/showip/init.php ]; then
+    if [[ ${bActiveOut} -eq 1 ]] && [ -f "${gsRutorrentPluginsDir}"/showip/init.php ]; then
         grep 'file_get_contents' "${gsRutorrentPluginsDir}"/showip/init.php | awk '{ print $3 }' | cut -d '"' -f 2 | cut -d '/' -f 3 | sed "s,https://,,g;s,http://,,g;s,/,,g;" | while read -r sFQDN; do
             echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin showip\"" >>/etc/pgl/custom.insert.sh
         done
@@ -674,19 +689,69 @@ gfnPeerGuardianIptablesInsert() {
         done
     fi
     # loginmgr
-    if [ -d "${gsRutorrentPluginsDir}"/loginmgr/accounts/ ]; then
+    if [[ ${bActiveOut} -eq 1 ]] && [ -d "${gsRutorrentPluginsDir}"/loginmgr/accounts/ ]; then
         grep -rh 'http://' "${gsRutorrentPluginsDir}"/loginmgr/accounts/ | awk '{ print $4 }' | cut -d '/' -f 3 | sed 's/";//g;' | while read -r sFQDN; do
             echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin loginmgr\"" >>/etc/pgl/custom.insert.sh
         done
     fi
     # extsearch
-    if [ -d "${gsRutorrentPluginsDir}"/extsearch/ ]; then
+    if [[ ${bActiveOut} -eq 1 ]] && [ -d "${gsRutorrentPluginsDir}"/extsearch/ ]; then
         grep -rh 'http://' "${gsRutorrentPluginsDir}"/extsearch/ | cut -d '/' -f 3 | sed "s/';//g;" | while read -r sFQDN; do
             echo "iptables -I pgl_out -p tcp -d ${sFQDN} --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin extsearch\"" >>/etc/pgl/custom.insert.sh
         done
     fi
     # mediastream
-    echo "iptables -I pgl_out -p tcp -d go.divx.com --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin mediastream\"" >>/etc/pgl/custom.insert.sh
+    if [[ ${bActiveOut} -eq 1 ]]; then
+        echo "iptables -I pgl_out -p tcp -d go.divx.com --dport 80 -j RETURN -m comment --comment \"OUTPUT HTTP for plugin mediastream\"" >>/etc/pgl/custom.insert.sh
+    fi
+
+    #### Trackers
+    if [[ ${bActiveOut} -eq 1 ]]; then
+        if [[ -f "${MySB_InstallDir}"/temp/current-iptables-rules ]]; then
+            sed -i "/OUTPUT for tracker /d" "${MySB_InstallDir}"/temp/current-iptables-rules
+            sed -i "/INPUT for tracker /d" "${MySB_InstallDir}"/temp/current-iptables-rules
+        fi
+        sRequestValues="$(cmdMySQL 'MySB_db' "SELECT id_trackers_list,tracker,tracker_proto,tracker_port FROM trackers_list WHERE is_active='1' AND to_delete=0;" | sed 's/\t/|/g;')"
+        for sTrackerInfos in ${sRequestValues}; do
+            if (! grep -q '# Trackers' /etc/pgl/custom.insert.sh); then
+                {
+                    echo
+                    echo "# Trackers"
+                } >>/etc/pgl/custom.insert.sh
+            fi
+
+            sTrackerId="$(echo "${sTrackerInfos}" | awk '{split($0,a,"|"); print a[1]}')"
+            sTracker="$(echo "${sTrackerInfos}" | awk '{split($0,a,"|"); print a[2]}')"
+            sTrackerProto="$(echo "${sTrackerInfos}" | awk '{split($0,a,"|"); print a[3]}')"
+            sTrackerPort="$(echo "${sTrackerInfos}" | awk '{split($0,a,"|"); print a[4]}')"
+
+            sProto="tcp"
+            case "${sTrackerProto}" in
+                udp) sProto="${sTrackerProto}" ;;
+            esac
+
+            sTrackerDetails="$(cmdMySQL 'MySB_db' "SELECT ipv4,pgl_banned FROM trackers_list_ipv4 WHERE id_trackers_list='${sTrackerId}';" | sed 's/\t/|/g;')"
+            for sValue in ${sTrackerDetails}; do
+                sIPv4="$(echo "${sValue}" | awk '{split($0,a,"|"); print a[1]}')"
+                bIsBanned="$(echo "${sValue}" | awk '{split($0,a,"|"); print a[2]}')"
+
+                if [[ ${bIsBanned} -eq 0 ]]; then
+                    echo "iptables -I pgl_out -p ${sProto} -d ${sIPv4} --dport ${sTrackerPort} -j RETURN -m comment --comment \"OUTPUT for tracker ${sTracker}\"" >>/etc/pgl/custom.insert.sh
+                    # echo "iptables -I pgl_in -p ${sProto} -s ${sIPv4} --dport ${sTrackerPort} -j ACCEPT -m comment --comment \"INPUT for tracker ${sTracker}\"" >>/etc/pgl/custom.insert.sh
+
+                    if [[ -f "${MySB_InstallDir}"/temp/current-iptables-rules ]]; then
+                        # pgl_out
+                        nNumLine=$(grep -i '\-A pgl_out ' -n -m 1 "${MySB_InstallDir}"/temp/current-iptables-rules | cut -d ':' -f 1)
+                        sed -i "${nNumLine}i\-A pgl_out -d ${sIPv4}/32 -p ${sProto} -m ${sProto} --dport ${sTrackerPort} -m comment --comment \"OUTPUT for tracker ${sTracker}\" -j RETURN" "${MySB_InstallDir}"/temp/current-iptables-rules
+
+                        # pgl_in
+                        # nNumLine=$(grep -i '\-A pgl_in ' -n -m 1 "${MySB_InstallDir}"/temp/current-iptables-rules | cut -d ':' -f 1)
+                        # sed -i "${nNumLine}i\-A pgl_in -s ${sIPv4}/32 -p ${sProto} -m ${sProto} --dport ${sTrackerPort} -m comment --comment \"INPUT for tracker ${sTracker}\" -j ACCEPT" "${MySB_InstallDir}"/temp/current-iptables-rules
+                    fi
+                fi
+            done
+        done
+    fi
 
     echo >>/etc/pgl/custom.insert.sh
 
@@ -794,7 +859,6 @@ gfnPeerGuardianNetworkPortsGenerator() {
 
     # UDP Out
     WHITE_UDP_OUT="${WHITE_UDP_OUT}"
-    [ "${gbIsInstalled_DNScrypt}" == "YES" ] && WHITE_UDP_OUT="${WHITE_UDP_OUT} ${sPortList}"
     WHITE_UDP_OUT="$(echo "$WHITE_UDP_OUT" | xargs -n1 | sort -n -u | xargs)"
 
     # Services

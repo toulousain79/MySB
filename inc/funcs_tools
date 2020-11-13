@@ -102,31 +102,35 @@ gfnStatistics() {
     # local sMachineId sStatsAllowed sResult sCountry
     local sMachineId sResult sCountry sMachineIdFile
 
-    if [ -f /etc/machine-id ]; then
+    if [[ -f /etc/machine-id ]]; then
         sMachineIdFile="/etc/machine-id"
-    elif [ -f /var/lib/dbus/machine-id ]; then
+    elif [[ -f /var/lib/dbus/machine-id ]]; then
         sMachineIdFile="/var/lib/dbus/machine-id"
     else
         dbus-uuidgen --ensure
         sMachineIdFile="/etc/machine-id"
     fi
 
-    if [ -f "${sMachineIdFile}" ]; then
-        if (gfnCheckCommand 0 geoiplookup) && [ -n "${gsSrvIpAddressExt}" ]; then
+    if [[ -f "${sMachineIdFile}" ]]; then
+        if (gfnCheckCommand 0 geoiplookup) && [[ -n "${gsSrvIpAddressExt}" ]]; then
             sCountry="$(geoiplookup "${gsSrvIpAddressExt}" | awk '{ print $5 }')"
-            [ -z "${sCountry}" ] && sCountry="unknown"
+            [[ -z "${sCountry}" ]] && sCountry="unknown"
         else
             sCountry="unknown"
         fi
 
-        if [ ! -f /.dockerenv ]; then
+        if [[ ! -f /.dockerenv ]]; then
             sMachineId="$(sha256sum <<<"${sMachineIdFile}" | awk '{ print $1 }')"
         else
             sMachineId="$(sha256sum <<<"tests integ" | awk '{ print $1 }')"
         fi
-        [ -f "${MySB_InstallDir}"/statistics ] && sStatsAllowed="$(cat "${MySB_InstallDir}"/statistics)" || sStatsAllowed="no_stats"
-        if [ -n "${sMachineId}" ] && [ "${sStatsAllowed}" != "no_stats" ]; then
-            [ -z "${sCountry}" ] && sCountry="unknown"
+
+        sStatsAllowed="no_stats"
+        if [[ -f "${MySB_InstallDir}"/statistics ]]; then
+            sStatsAllowed="$(cat "${MySB_InstallDir}"/statistics)"
+        fi
+        if [[ -n "${sMachineId}" ]] && [[ "${sStatsAllowed}" != "no_stats" ]]; then
+            [[ -z "${sCountry}" ]] && sCountry="unknown"
             sResult="$(curl --silent --retry 1 -A 'MySB' --data "version=${gsCurrentVersion}&country=${sCountry}&machine_id=${sMachineId}" http://toulousain79.free.fr/statistics/)"
             (grep -q 'Statistics updated at' <<<"${sResult}") && echo "${sResult}" >"${MySB_InstallDir}"/statistics
         fi
@@ -191,10 +195,8 @@ gfnGetPid() {
 
 #### Check status for screen
 gfnStatusSTD() {
-    local sResult
-    sResult="$?"
-
-    if [ "${sResult}" -gt 0 ]; then
+    sRes=$?
+    if [[ ${sRes} -gt 0 ]]; then
         echo -e "${Global_Failed}"
         echo ""
         echo -e "${Global_Error_StatusSTD[@]}"
@@ -202,26 +204,22 @@ gfnStatusSTD() {
     else
         [ ! -f /.dockerenv ] && echo -e "${Global_Done}"
     fi
+    unset sRes
 }
 
 #### Check status for LSB
 gfnStatusLSB() {
-    local sResult
-    sResult="$?"
+    sRes=$?
+    if [[ -n ${1} ]]; then
+        sRes=${1}
+    fi
 
-    if [ "${sResult}" -gt 0 ]; then
-        if [ -n "${1}" ]; then
-            if [ "${1}" -gt 0 ]; then
-                log_end_msg 1
-            else
-                log_end_msg 0
-            fi
-        else
-            log_end_msg 1
-        fi
+    if [[ ${sRes} -ge 1 ]]; then
+        log_end_msg 1
     else
         log_end_msg 0
     fi
+    unset sRes
 }
 
 #### Waiting standard
@@ -816,8 +814,7 @@ gfnRepoManageByType() {
 
 #### FStab generation
 gfnFstabGeneration() {
-    local sSwitch sSwap nNumLine nColNum sVFSV sQuotaOpts sDedicatedHome
-    sSwitch="${1}"
+    local sSwap nNumLine nColNum sVFSV sQuotaOpts sDedicatedHome
     sDedicatedHome=$(grep "[[:space:]]/home[[:space:]]" /etc/fstab)
 
     # Backup
@@ -828,12 +825,10 @@ gfnFstabGeneration() {
     sed -i '/^#/d;/^$/d;' /etc/fstab
 
     # Quota use
-    if [[ ${sSwitch} == 'add_quota' ]]; then
-        case $(getconf LONG_BIT) in
-            64) sVFSV="vfsv1" ;;
-            *) sVFSV="vfsv0" ;;
-        esac
-    fi
+    case $(getconf LONG_BIT) in
+        64) sVFSV="vfsv1" ;;
+        *) sVFSV="vfsv0" ;;
+    esac
 
     # SWAP
     sSwap="$(grep 'swap' /etc/fstab)"

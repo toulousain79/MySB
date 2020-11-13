@@ -36,6 +36,7 @@ gfnLoadingVars() {
     ServicesToStop="pglcmd fail2ban cron"
     rTorrentToStop=""
     rTorrentToStart=""
+    sStartMode="start"
 
     # Check arguments options
     LoadKernelModules=NO
@@ -97,6 +98,7 @@ gfnLoadingVars() {
                     ApplyConfigPeerGuardian=${gbIsInstalled_PeerGuardian}
                     ;;
                 --trackers)
+                    # ApplyRtorrentUsed=NO
                     ApplyConfigBind="$(gfnCheckCommand 1 named)"
                     ApplyConfigPeerGuardian=${gbIsInstalled_PeerGuardian}
                     ;;
@@ -123,22 +125,32 @@ gfnLoadingVars() {
             ;;
     esac
 
-    export ApplyIptablesUsers ApplyIptablesLetsEncrypt LoadOnBoot LoadKernelParameter LoadKernelModules
+    case "${RefreshSwitch}" in
+        --trackers)
+            unset ServicesToRestart
+            sStartMode="restart"
+            [ "${ApplyConfigPeerGuardian}" == "YES" ] && { ServicesToRestart="${ServicesToRestart} pglcmd"; }
+            ;;
+        *)
+            [ "${ApplyConfigBind}" == "YES" ] && { ServicesToRestart="${ServicesToRestart} bind9"; }
+            [ "${ApplyConfigNginx}" == "YES" ] && { ServicesToRestart="${ServicesToRestart} nginx"; }
+            [ "${ApplyConfigFail2Ban}" == "YES" ] && { ServicesToRestart="${ServicesToRestart} fail2ban"; }
+            [ "${ApplyConfigPeerGuardian}" == "YES" ] && { ServicesToRestart="${ServicesToRestart} pglcmd"; }
+            [ "${gbIsInstalled_OpenVPN}" == "YES" ] && {
+                ServicesToRestart="${ServicesToRestart} openvpn smbd nfs-kernel-server"
+                ServicesToStop="${ServicesToStop} nfs-kernel-server smbd openvpn"
+            }
+            ;;
+    esac
 
-    [ "${ApplyConfigBind}" == "YES" ] && { ServicesToRestart="${ServicesToRestart} bind9"; }
-    [ "${ApplyConfigNginx}" == "YES" ] && { ServicesToRestart="${ServicesToRestart} nginx"; }
-    [ "${ApplyConfigFail2Ban}" == "YES" ] && { ServicesToRestart="${ServicesToRestart} fail2ban"; }
-    [ "${ApplyConfigPeerGuardian}" == "YES" ] && { ServicesToRestart="${ServicesToRestart} pglcmd"; }
-    [ "${gbIsInstalled_OpenVPN}" == "YES" ] && {
-        ServicesToRestart="${ServicesToRestart} openvpn smbd nfs-kernel-server"
-        ServicesToStop="${ServicesToStop} nfs-kernel-server smbd openvpn"
-    }
     if gfnCheckCommand 0 dnscrypt-proxy; then
         case "${gbDnsCryptSwitch}" in
             '0') ServicesToStop="${ServicesToStop} dnscrypt-proxy" ;;
             '1') [ "${gsSwitch}" != "UPGRADE" ] && ServicesToRestart="${ServicesToRestart} dnscrypt-proxy" ;;
         esac
     fi
+
+    export ApplyIptablesUsers ApplyIptablesLetsEncrypt LoadOnBoot LoadKernelParameter LoadKernelModules sStartMode
 }
 
 #### Create all rules for services (config files)
@@ -267,7 +279,7 @@ gfnGenerateBlacklistsZone() {
     local sAllTrackers sTracker
 
     echo "#### MySB - Blacklisted domains (ex: inactive trackers)" >/etc/bind/MySB.zones.blacklists
-    if [ -d /etc/dnscrypt-proxy ] && [ ! -f /etc/dnscrypt-proxy/blacklist.txt ]; then
+    if [ -d /etc/dnscrypt-proxy ]; then
         install -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/blacklist.txt.tmpl /etc/dnscrypt-proxy/blacklist.txt
     fi
 
@@ -280,7 +292,7 @@ gfnGenerateBlacklistsZone() {
     fi
 
     # Add all disabled trackers to blacklists files (Bind9 & DNScrypt-proxy)
-    sAllTrackers="$(cmdMySQL 'MySB_db' "SELECT id_trackers_list,tracker FROM trackers_list WHERE is_active='0';")"
+    sAllTrackers="$(cmdMySQL 'MySB_db' "SELECT tracker FROM trackers_list WHERE is_active='0';")"
     for sTracker in ${sAllTrackers}; do
         echo "zone \"${sTracker}\" { type master; file \"/etc/bind/db.empty\"; };" >>/etc/bind/MySB.zones.blacklists
         if [ -f /etc/dnscrypt-proxy/blacklist.txt ]; then
@@ -297,19 +309,11 @@ gfnCreateHostsFile() {
 
     echo "127.0.0.1	 localhost.localdomain localhost" >/etc/hosts
     echo "${gsSrvIpAddress}   ${gsHostNameFqdn} $(hostname -s)" >>/etc/hosts
-    [ "${gsSrvIpAddress}" != "${gsSrvIpAddressExt}" ] && echo "${gsSrvIpAddressExt}	 ${gsHostNameFqdn}" >>/etc/hosts
+    [[ "${gsSrvIpAddress}" != "${gsSrvIpAddressExt}" ]] && echo "${gsSrvIpAddressExt}	 ${gsHostNameFqdn}" >>/etc/hosts
     echo "" >>/etc/hosts
 
-    if [ -d /etc/dnscrypt-proxy ] && [ ! -f /etc/dnscrypt-proxy/whitelist.txt ]; then
+    if [[ -d /etc/dnscrypt-proxy ]]; then
         install -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/whitelist.txt.tmpl /etc/dnscrypt-proxy/whitelist.txt
-    fi
-
-    # Remove all activated/deactivated trackers from DNScrypt-proxy whitelist file (>/etc/dnscrypt-proxy/whitelist.txt)
-    if [ -f /etc/dnscrypt-proxy/whitelist.txt ]; then
-        sAllTrackers="$(cmdMySQL 'MySB_db' "SELECT id_trackers_list,tracker FROM trackers_list WHERE 1;")"
-        for sTracker in ${sAllTrackers}; do
-            sed -i "/${sTracker}/d" /etc/dnscrypt-proxy/whitelist.txt
-        done
     fi
 
     # Add all activated trackers to /etc/hosts & /etc/dnscrypt-proxy/whitelist.txt
@@ -318,13 +322,13 @@ gfnCreateHostsFile() {
         sTracker="$(echo "${sROW}" | awk '{split($0,a,"|"); print a[2]}')"
         sTrackerIPv4="$(cmdMySQL 'MySB_db' "SELECT ipv4 FROM trackers_list_ipv4 WHERE id_trackers_list='${nIdTracker}' AND pgl_banned='0';")"
 
-        if [ -n "${sTrackerIPv4}" ]; then
+        if [[ -n "${sTrackerIPv4}" ]]; then
             if (! grep -q 'Force trackers resolution' /etc/hosts); then
                 echo "#### MySB - Force trackers resolution (ex: DNS liar)" >>/etc/hosts
             fi
             for sIPv4 in ${sTrackerIPv4}; do
                 echo "${sIPv4}	   ${sTracker}" >>/etc/hosts
-                if [ -f /etc/dnscrypt-proxy/whitelist.txt ]; then
+                if [[ -f /etc/dnscrypt-proxy/whitelist.txt ]]; then
                     echo "${sTracker}" >>/etc/dnscrypt-proxy/whitelist.txt
                 fi
             done

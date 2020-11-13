@@ -207,7 +207,7 @@ if (isset($_POST['submit'])) {
 						if( $to_delete == 1 ) {
 							$RefreshPage++;
 							$rTorrentRestart_POST = 1;
-							$Command = 'Restart_rTorrent';
+							$Command = 'Reload_rTorrent';
 						} else {
 							$Command = 'Options_MySB';
 						}
