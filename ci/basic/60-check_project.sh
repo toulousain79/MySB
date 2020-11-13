@@ -29,8 +29,8 @@
 #   SINON KO
 
 if [ -z "${vars}" ] || [ "${vars}" -eq 0 ]; then
-    # shellcheck source=ci/check/00-load_vars.bsh
-    . "/builds/${CI_PROJECT_PATH}/ci/check/00-libs.sh"
+    # shellcheck source=ci/common/00-libs.sh
+    . "/builds/${CI_PROJECT_PATH}/ci/common/00-libs.sh"
 else
     nReturn=${nReturn}
 fi
