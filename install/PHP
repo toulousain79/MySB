@@ -25,6 +25,39 @@ source "$(dirname "$0")"/../inc/includes_before
 #
 ##################### FIRST LINE #####################################
 
+#### Sysctl
+{
+    echo "net.core.somaxconn=1024"
+    echo "vm.overcommit_memory=1"
+} >/etc/sysctl.d/999-redis.conf
+sysctl --system
+
+#### Redis
+function fnRedisConfig() {
+    local sPort sSocketFile sSocketPerm
+
+    install -v -o root -g root -m 0755 -d "/etc/redis"
+    [[ -f /etc/redis/redis.conf ]] && {
+        sed -i \
+            -e "s/^bind /#bind /g;" \
+            -e "s/^# unixsocket/unixsocket/g;" \
+            -e "s/^# unixsocket/unixsocket/g;" \
+            -e "s/^# unixsocketperm/unixsocketperm/g;" \
+            /etc/redis/redis.conf
+
+        sPort="$(grep '^port ' /etc/redis/redis.conf)"
+        sSocketFile="$(grep 'unixsocket ' /etc/redis/redis.conf)"
+        sSocketPerm="$(grep 'unixsocketperm ' /etc/redis/redis.conf)"
+        sed -i \
+            -e "s/${sPort}/port 0/g;" \
+            -e "s,${sSocketFile},unixsocket /var/run/redis/redis-server.sock,g;" \
+            -e "s/${sSocketPerm}/unixsocketperm 770/g;" \
+            /etc/redis/redis.conf
+    }
+    usermod -a -G redis www-data
+}
+fnRedisConfig
+
 #### STOP services
 gfnManageServices stop "nginx ${binPhpService} redis-server"
 
@@ -33,35 +66,9 @@ aPackages=(redis-server dh-php php-common php-cli php-fpm php-imagick php-dev ph
 gfnPackageBundleInstall "${aPackages[@]}"
 gfnPackagesManage purge "apache2"
 
-#### Redis
-install -v -o root -g root -m 0755 -d "/etc/redis"
-[[ -f /etc/redis/redis.conf ]] && {
-    sed -i \
-        -e "s/^bind /#bind /g;" \
-        -e "s/^# unixsocket/unixsocket/g;" \
-        -e "s/^# unixsocket/unixsocket/g;" \
-        -e "s/^# unixsocketperm/unixsocketperm/g;" \
-        /etc/redis/redis.conf
-
-    sPort="$(grep '^port ' /etc/redis/redis.conf)"
-    sSocketFile="$(grep 'unixsocket ' /etc/redis/redis.conf)"
-    sSocketPerm="$(grep 'unixsocketperm ' /etc/redis/redis.conf)"
-    sed -i \
-        -e "s/${sPort}/port 0/g;" \
-        -e "s,${sSocketFile},unixsocket /var/run/redis/redis-server.sock,g;" \
-        -e "s/${sSocketPerm}/unixsocketperm 770/g;" \
-        /etc/redis/redis.conf
-}
-usermod -a -G redis www-data
-{
-    echo "net.core.somaxconn=1024"
-    echo "vm.overcommit_memory=1"
-} >/etc/sysctl.d/999-redis.conf
-sysctl --system
-
 # /var/lib/php/sessions/ (NextCloud needs)
-chown www-data:www-data /var/lib/php/sessions
-chmod 0773 /var/lib/php/sessions
+# chown www-data:www-data /var/lib/php/sessions
+# chmod 0773 /var/lib/php/sessions
 
 #### Reload new vars
 # shellcheck source=/dev/null
@@ -69,9 +76,6 @@ source "${MySB_InstallDir}"/inc/vars
 
 #### STOP services
 gfnManageServices stop "nginx ${binPhpService} redis-server"
-
-#### Redis
-install -v -o root -g root -m 0755 -d "/etc/redis"
 
 #### Configuration files
 # "${gsPhpDir}"/fpm/php-fpm.conf
@@ -202,8 +206,21 @@ if gfnCheckCommand 0 geoipupdate; then
     geoipupdate -v
 fi
 
+#### Redis
+fnRedisConfig
+
+#### Reset logs
+: >/var/log/redis/redis-server.log
+: >/var/log/"${binPhpService}".log
+
 #### START services
 gfnManageServices start "redis-server ${binPhpService} nginx"
+
+#### Status
+echo
+tail -n33 /var/log/redis/redis-server.log
+echo
+tail -n5 /var/log/"${binPhpService}".log
 
 # -----------------------------------------
 # shellcheck source=inc/includes_after

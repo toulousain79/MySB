@@ -112,15 +112,12 @@ fi
 [ ! -f /var/log/nextcloud.log ] && touch /var/log/nextcloud.log
 chown -v www-data:www-data /var/log/nextcloud.log
 chown -R www-data:www-data "${sDataDir}"
+: >/var/log/nextcloud.log
 
 #### Clean some files and directories
 gfnDeleteDirectory 1 "${gsNextCloudDir}"/data
 gfnDeleteDirectory 1 "${gsNextCloudDir}"/assets
 rm -fv "${gsNextCloudDir}"/config/config.sample.php
-if [ -f "${sDataDir}"/nextcloud.log ]; then
-    cat "${sDataDir}"/nextcloud.log >>/var/log/nextcloud.log
-    rm -fv "${sDataDir}"/nextcloud.log*
-fi
 
 #### Create directories & change rights
 gfnManageDirAndFiles 'global'
@@ -210,6 +207,16 @@ if [[ (! -f "${gsNextCloudDir}"/config/config.php) || (! -s "${gsNextCloudDir}"/
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mysql.utf8mb4 --type boolean --value=true"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set token_auth_enforced --type boolean --value=false"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set logfile --value=/var/log/nextcloud.log"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set logfilemode --value=0640"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set loglevel --value=2"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set auto_logout --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set auth.webauthn.enabled --type boolean --value=true"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set sharing.enable_share_accept --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set sharing.force_share_accept --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set sharing.enable_share_mail --type boolean --value=true"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set hashing_default_password --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set external_storage.auth_availability_delay --type integer --value=1800"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mount_file --value=/home/nextcloud/mount.json"
 fi
 
 # Maybe it's an upgrade ?
@@ -301,7 +308,7 @@ for seedUser in ${gsUsersList}; do
             if [ -n "${IdStorage}" ]; then
                 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:applicable --add-user \"${seedUser}\" ${IdStorage}"
                 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:config ${IdStorage} datadir '/home/${seedUser}/rtorrent/${sUserDataDir,,}'"
-                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} filesystem_check_changes 'true'"
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} filesystem_check_changes '0'"
                 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encrypt 'false'"
                 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} previews 'true'"
                 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} enable_sharing 'true'"
@@ -380,8 +387,12 @@ crontab -u www-data /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
 su -s /bin/sh www-data -c "/usr/bin/php -f ${gsNextCloudDir}/cron.php >/dev/null 2>&1"
 
+#### Cleaning
+rm -fv "${sDataDir}"/nextcloud.log*
+rm -fv "${gsNextCloudDir}"/config/CAN_INSTALL
+
 #### CLean passwords from log file
-[ -f "${gsLogFile}" ] && sed -i "s/${MySQL_MysbPassword}/****************/g;" "${gsLogFile}"
+[[ -f "${gsLogFile}" ]] && sed -i "s/${MySQL_MysbPassword}/****************/g;" "${gsLogFile}"
 
 # -----------------------------------------
 # shellcheck source=inc/includes_after

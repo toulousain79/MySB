@@ -6,6 +6,7 @@
 - fix ip add #116
 - fix torrent loading #120
 - fix broken install #119
+- Redis, use of unix socket
 - NextCloud v19.0.4
 - NetData v1.26.0
 - GeoIPupdate v4.5.0

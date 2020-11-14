@@ -305,16 +305,38 @@ gfnGenerateBlacklistsZone() {
 
 #### Create '/etc/hosts' file
 gfnCreateHostsFile() {
-    local nIdTracker sTracker sTrackerIPv4 sIPv4 sROW
+    local nIdTracker sTracker sTrackerIPv4 sIPv4 sROW sHostname
 
-    echo "127.0.0.1	 localhost.localdomain localhost" >/etc/hosts
-    echo "${gsSrvIpAddress}   ${gsHostNameFqdn} $(hostname -s)" >>/etc/hosts
-    [[ "${gsSrvIpAddress}" != "${gsSrvIpAddressExt}" ]] && echo "${gsSrvIpAddressExt}	 ${gsHostNameFqdn}" >>/etc/hosts
-    echo "" >>/etc/hosts
+    {
+        echo "# Default"
+        echo "127.0.0.1	 localhost.localdomain localhost"
+        echo "${gsSrvIpAddress}   ${gsHostNameFqdn} $(hostname -s)"
+        [[ "${gsSrvIpAddress}" != "${gsSrvIpAddressExt}" ]] && echo "${gsSrvIpAddressExt}	 ${gsHostNameFqdn}"
+    } >/etc/hosts
 
     if [[ -d /etc/dnscrypt-proxy ]]; then
         install -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/whitelist.txt.tmpl /etc/dnscrypt-proxy/whitelist.txt
     fi
+
+    # Needed domains
+    {
+        echo
+        echo "# Needed domains"
+    } >>/etc/hosts
+    if [[ -f /etc/dnscrypt-proxy/whitelist.txt ]]; then
+        {
+            echo
+            echo "# Needed domains"
+        } >>/etc/dnscrypt-proxy/whitelist.txt
+    fi
+    for sHostname in "${gsUrlCheckList[@]}" "${gaNeededDomains[@]}"; do
+        sHostname="$(echo "${sHostname}" | cut -d '/' -f 1)"
+        sIPv4="$(nslookup -type=A "${sHostname}" | grep 'Address:' | awk '{ print $2 }' | tail -n +2 | head -n1)"
+        echo "${sIPv4}	 ${sHostname}" >>/etc/hosts
+        if [[ -f /etc/dnscrypt-proxy/whitelist.txt ]]; then
+            echo "${sHostname}" >>/etc/dnscrypt-proxy/whitelist.txt
+        fi
+    done
 
     # Add all activated trackers to /etc/hosts & /etc/dnscrypt-proxy/whitelist.txt
     cmdMySQL 'MySB_db' "SELECT id_trackers_list,tracker FROM trackers_list WHERE is_active='1';" | sed 's/\t/|/g;' | while read -r sROW; do
