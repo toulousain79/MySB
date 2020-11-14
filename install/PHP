@@ -28,15 +28,29 @@ source "$(dirname "$0")"/../inc/includes_before
 #### STOP services
 gfnManageServices stop "nginx ${binPhpService} redis-server"
 
+#### Install packages
+aPackages=(redis-server dh-php php-common php-cli php-fpm php-imagick php-dev php-curl php-gd php-gmp php-imap php-intl php-json php-mysql php-readline php-sqlite3 php-xmlrpc php-msgpack php-geoip php-redis php-xml php-zip php-mbstring php-bcmath php-bz2 php-pear libgeoip-dev)
+gfnPackageBundleInstall "${aPackages[@]}"
+gfnPackagesManage purge "apache2"
+
 #### Redis
 install -v -o root -g root -m 0755 -d "/etc/redis"
-[ -f /etc/redis/redis.conf ] && {
-    sOldValue="$(grep '^bind ' /etc/redis/redis.conf)"
-    sed -i "s/${sOldValue}/bind 127.0.0.1/g;" /etc/redis/redis.conf
-    # sOldValue="$(grep '^port 6379' /etc/redis/redis.conf)"
-    # sed -i "s/${sOldValue}/port 0/g;" /etc/redis/redis.conf
-    # sOldValue="$(grep '^# unixsocket' /etc/redis/redis.conf)"
-    # sed -i "s/^# unixsocket/unixsocket/g;" /etc/redis/redis.conf
+[[ -f /etc/redis/redis.conf ]] && {
+    sed -i \
+        -e "s/^bind /#bind /g;" \
+        -e "s/^# unixsocket/unixsocket/g;" \
+        -e "s/^# unixsocket/unixsocket/g;" \
+        -e "s/^# unixsocketperm/unixsocketperm/g;" \
+        /etc/redis/redis.conf
+
+    sPort="$(grep '^port ' /etc/redis/redis.conf)"
+    sSocketFile="$(grep 'unixsocket ' /etc/redis/redis.conf)"
+    sSocketPerm="$(grep 'unixsocketperm ' /etc/redis/redis.conf)"
+    sed -i \
+        -e "s/${sPort}/port 0/g;" \
+        -e "s,${sSocketFile},unixsocket /var/run/redis/redis-server.sock,g;" \
+        -e "s/${sSocketPerm}/unixsocketperm 770/g;" \
+        /etc/redis/redis.conf
 }
 usermod -a -G redis www-data
 {
@@ -45,17 +59,9 @@ usermod -a -G redis www-data
 } >/etc/sysctl.d/999-redis.conf
 sysctl --system
 
-#### Install packages
-sPeclModules="smbclient"
-sDebModulesWithPecl=""
-# gfnPackagesManage purge "$sDebModulesWithPecl"
-sPackages=(redis-server dh-php php-common php-cli php-fpm php-imagick php-dev php-curl php-gd php-gmp php-imap php-intl php-json php-mysql php-readline php-sqlite3 php-xmlrpc php-msgpack php-geoip php-redis php-xml php-zip php-mbstring php-smbclient php-pear libgeoip-dev "${sDebModulesWithPecl}")
-gfnPackageBundleInstall "${sPackages[@]}"
-gfnPackagesManage purge "apache2"
-
 # /var/lib/php/sessions/ (NextCloud needs)
-# chown www-data:www-data /var/lib/php/sessions
-# chmod 0773 /var/lib/php/sessions
+chown www-data:www-data /var/lib/php/sessions
+chmod 0773 /var/lib/php/sessions
 
 #### Reload new vars
 # shellcheck source=/dev/null
@@ -80,51 +86,93 @@ perl -pi -e "s/disable_functions = /;disable_functions = /g" "${gsPhpDir}"/cli/p
 
 #### Modules inventory
 sExtDir="/usr/lib/php/20180731"
-sAllExtList="$(echo "${sAllExtList}" | xargs -n1 | sort -u | xargs | sed -e 's/^ //g;s/\s+$//g;')"
+sExtList="$(find "${sExtDir}"/ -maxdepth 1 -name '*.so' -type f -printf "%f\n")"
+sAllExtList="$(echo "${sExtList//.so/}" | xargs -n1 | uniq | xargs | sed -e 's/^ //g;s/\s+$//g;')"
+aPeclModules=("smbclient")
+aExtList=("pdo" "opcache" "mysqlnd" "xml")
+for Ext in ${sAllExtList}; do
+    bToAdd=1
+    for i in "${aExtList[@]}"; do
+        [[ "${Ext}" == "${i}" ]] && bToAdd=0
+    done
+    [[ ${bToAdd} -eq 1 ]] && aExtList+=("${Ext}")
+done
 
 #### PEAR/PECL config
 update-ca-certificates --verbose --fresh &>/dev/null
 pear config-set auto_discover 1
 pear config-set php_ini "${gsPhpDir}"/cli/php.ini
-pear config-set ext_dir ${sExtDir}
+pear config-set ext_dir "${sExtDir}"
+pear channel-update pear.php.net
 pear update-channels
-pear upgrade --force Console_GetoptPlus
-pear upgrade --force pear/XML_Util
 pear upgrade --force
+pear upgrade --force Archive_Tar-1.4.4
+pear upgrade --force Console_GetoptPlus-beta
+pear upgrade --force XML_Util-1.4.5
 
 #### Disable all modules
-for Ext in ${sPeclModules}; do
-    [ -f "${gsPhpDir}"/mods-available/"${Ext}".ini ] && phpdismod "${Ext}"
+for Ext in "${aPeclModules[@]}"; do
+    ${binPhpDismod} "${Ext}" &>/dev/null
     rm -fv "${gsPhpDir}"/mods-available/"${Ext}".ini
-    (grep -q "${Ext}" <<<"$(pecl list)") && pecl uninstall "${Ext}"
+    (grep -q "${Ext}" < <(pecl list)) && pecl uninstall "${Ext}"
 done
-# if [ -d "${sExtDir}-zts" ]; then
-#     sExtListZts="$(ls -A1 ${sExtDir}-zts | cut -d "." -f 1)"
-#     for Ext in ${sExtListZts}; do
-#         [ -f "${gsPhpDir}"/mods-available/"${Ext}".ini ] && phpdismod "${Ext}"
-#         rm -fv "${gsPhpDir}"/mods-available/"${Ext}".ini
-#     done
-#     gfnDeleteDirectory 1 ${sExtDir}-zts
-# fi
-for Ext in ${sAllExtList}; do
-    [ -f ${sExtDir}/"${Ext}".ini ] && phpdismod "${Ext}"
+for Ext in "${aExtList[@]}"; do
+    ${binPhpDismod} "${Ext}" &>/dev/null
     rm -fv "${gsPhpDir}"/mods-available/"${Ext}".ini
 done
 
 #### Enable all modules
-for Ext in ${sAllExtList}; do
+for Ext in "${aExtList[@]}"; do
     case "${Ext}" in
         'opcache')
-            echo "zend_extension=opcache.so" >"${gsPhpDir}"/mods-available/opcache.ini
-            (! grep -q 'opcache' <<<"$(php -m)") && ${binPhpEnmod} opcache
+            {
+                echo "; priority=10"
+                echo "zend_extension=opcache.so"
+            } >"${gsPhpDir}"/mods-available/"${Ext}".ini
+            ;;
+        'pdo' | 'mysqlnd')
+            {
+                echo "; priority=10"
+                echo "extension=${Ext}.so"
+            } >"${gsPhpDir}"/mods-available/"${Ext}".ini
+            ;;
+        'igbinary')
+            {
+                echo "; configuration for php igbinary module"
+                echo "; priority=20"
+                echo "; Load igbinary extension"
+                echo "extension=igbinary.so"
+                echo "; Use igbinary as session serializer"
+                echo ";session.serialize_handler=igbinary"
+                echo "; Enable or disable compacting of duplicate strings"
+                echo "; The default is On."
+                echo "igbinary.compact_strings=On"
+                echo "; Use igbinary as serializer in APC cache (3.1.7 or later)"
+                echo ";apc.serializer=igbinary"
+            } >"${gsPhpDir}"/mods-available/"${Ext}".ini
+            ;;
+        'imagick' | 'redis' | 'smbclient' | 'htscanner' | 'geoip')
+            {
+                echo "extension=${Ext}.so"
+            } >"${gsPhpDir}"/mods-available/"${Ext}".ini
+            ;;
+        'xml')
+            {
+                echo "; priority=15"
+                echo "extension=${Ext}.so"
+            } >"${gsPhpDir}"/mods-available/"${Ext}".ini
             ;;
         *)
-            echo "extension=${Ext}.so" >"${gsPhpDir}"/mods-available/"${Ext}".ini
-            (! grep -q "${Ext}" <<<"$(php -m)") && ${binPhpEnmod} "${Ext}"
+            {
+                echo "; priority=20"
+                echo "extension=${Ext}.so"
+            } >"${gsPhpDir}"/mods-available/"${Ext}".ini
             ;;
     esac
+    ${binPhpEnmod} "${Ext}"
 done
-for Ext in ${sPeclModules}; do
+chmod 644 "${sExtDir}"/*.so
+for Ext in "${aPeclModules[@]}"; do
     case "${Ext}" in
         'smbclient')
             gfnGetRepoValues 'libsmbclient-php'
@@ -138,24 +186,21 @@ for Ext in ${sPeclModules}; do
             echo "extension=smbclient.so" >"${gsPhpDir}"/mods-available/smbclient.ini
             ${binPhpEnmod} smbclient
             cd .. && gfnDeleteDirectory 0 "${gsRepoDir:-/tmp/null}"/
-            ;;
-        'htscanner')
-            pecl install htscanner
-            echo "extension=htscanner.so" >"${gsPhpDir}"/mods-available/htscanner.ini
-            ${binPhpEnmod} htscanner
-            rm -fv "${gsPhpDir}"/cli/conf.d/20-htscanner.ini
+            chmod 644 ${sExtDir}/smbclient.so
+            echo
+            ${binPhpFpm} -i | grep 'smbclient'
             ;;
     esac
 done
-chmod 644 ${sExtDir}/*.so
 
-#### Check modules installation
-${binPhpFpm} -i | grep 'htscanner'
 echo
-${binPhpFpm} -i | grep 'smbclient'
+php -m
 
 #### GeoIP update
-if gfnCheckCommand 0 geoipupdate; then geoipupdate; fi
+if gfnCheckCommand 0 geoipupdate; then
+    echo
+    geoipupdate -v
+fi
 
 #### START services
 gfnManageServices start "redis-server ${binPhpService} nginx"

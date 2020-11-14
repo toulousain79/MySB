@@ -67,8 +67,6 @@ perl -pi -e "s/;opcache.memory_consumption=64/opcache.memory_consumption=128/g" 
 perl -pi -e "s/;opcache.save_comments=1/opcache.save_comments=1/g" "${gsPhpDir}"/fpm/php.ini
 perl -pi -e "s/;opcache.revalidate_freq=2/opcache.revalidate_freq=1/g" "${gsPhpDir}"/fpm/php.ini
 perl -pi -e "s/;opcache.revalidate_freq=2/opcache.revalidate_freq=1/g" "${gsPhpDir}"/fpm/php.ini
-#### ${gsPhpDir}/fpm/pool.d/www.conf
-perl -pi -e "s/^;env\[PATH\]/env\[PATH\]/g" "${gsPhpDir}"/fpm/pool.d/www.conf
 
 #### NginX configuration
 install -v -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.locations.nextcloud.conf.tmpl /etc/nginx/locations/NextCloud.conf
@@ -135,6 +133,10 @@ if [[ (! -f "${gsNextCloudDir}"/config/config.php) || (! -s "${gsNextCloudDir}"/
     for ((i = 1; i <= nLoop; i++)); do
         echo "# First install ${i}/${nLoop}"
 
+        if [[ -d "${sDataDir}"/admin/ ]]; then
+            gfnDeleteDirectory 1 "${sDataDir}"/admin
+        fi
+
         # Do first install
         su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:install --database \"mysql\" --database-host \"localhost:/run/mysqld/mysqld.sock\" --database-name \"NextCloud_db\" --database-user \"MySB_user\" --database-pass \"${MySQL_MysbPassword}\" --admin-user \"admin\" --admin-email=\"${gsMainUserEmail}\" --admin-pass \"${MySQL_MysbPassword}\" --database-table-prefix \"nc_\" --data-dir \"${sDataDir}\" --no-interaction"
 
@@ -145,7 +147,7 @@ if [[ (! -f "${gsNextCloudDir}"/config/config.php) || (! -s "${gsNextCloudDir}"/
         echo "sVersion: ${sVersion}"
         echo "sSecret: ${sSecret}"
         echo "sPasswordSalt: ${sPasswordSalt}"
-        if [ -z "${sVersion}" ] || [ -z "${sSecret}" ] || [ -z "${sPasswordSalt}" ]; then
+        if [[ -z "${sVersion}" ]] || [[ -z "${sSecret}" ]] || [[ -z "${sPasswordSalt}" ]]; then
             cmdMySQL 'MySB_db' "DROP DATABASE IF EXISTS NextCloud_db;" -v
             gfnDeleteDirectory 1 "${sDataDir}"/admin
             rm -fv "${gsNextCloudDir}"/config/config.php
@@ -207,6 +209,7 @@ if [[ (! -f "${gsNextCloudDir}"/config/config.php) || (! -s "${gsNextCloudDir}"/
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set skeletondirectory --value="
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mysql.utf8mb4 --type boolean --value=true"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set token_auth_enforced --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set logfile --value=/var/log/nextcloud.log"
 fi
 
 # Maybe it's an upgrade ?
@@ -260,13 +263,11 @@ for seedUser in ${gsUsersList}; do
     if (getent passwd "${seedUser}" >/dev/null); then
         FnUserMail="$(cmdMySQL 'MySB_db' "SELECT users_email FROM users WHERE users_ident='${seedUser}';")"
 
-        if [ ! -d "${sDataDir}"/"${seedUser}" ]; then
-            mkdir -v "${sDataDir}"/"${seedUser}"
-            chown -v www-data:www-data "${sDataDir}"/"${seedUser}"
-            chmod -v 0755 "${sDataDir}"/"${seedUser}"
-        fi
-
         if (! su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:info \"${seedUser}\"" >/dev/null); then
+            if [[ -d "${sDataDir}"/"${seedUser}" ]]; then
+                gfnDeleteDirectory 1 "${sDataDir}"/"${seedUser}"
+            fi
+
             OC_PASS="$(cmdMySQL 'MySB_db' "SELECT users_passwd FROM users WHERE users_ident='${seedUser}';")"
             [ -z "${OC_PASS}" ] && OC_PASS="$(gfnGenPassword 8)"
             export OC_PASS
@@ -274,25 +275,44 @@ for seedUser in ${gsUsersList}; do
             cmdMySQL 'MySB_db' "UPDATE users SET init_password = '1' WHERE users_ident='${seedUser}';" -v
         fi
 
+        if [[ ! -d "${sDataDir}"/"${seedUser}" ]]; then
+            mkdir -v "${sDataDir}"/"${seedUser}"
+            chown -v www-data:www-data "${sDataDir}"/"${seedUser}"
+            chmod -v 0755 "${sDataDir}"/"${seedUser}"
+        fi
+
         su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${seedUser}\" settings email \"${FnUserMail}\""
         su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${seedUser}\" core lang \"${EnvLang}\""
         su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${seedUser}\" core timezone ${gsTimeZone}"
 
-        #### Create new external mount (MySB_Home)
-        IdStorage=$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:create MySB_Home local null::null" | awk '{ print $5 }')
-        if [ -n "${IdStorage}" ]; then
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:applicable --add-user \"${seedUser}\" ${IdStorage}"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:config ${IdStorage} datadir '/home/${seedUser}/'"
-            # su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} filesystem_check_changes 'false'"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encrypt 'false'"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} previews 'true'"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} enable_sharing 'true'"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encoding_compatibility 'false'"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:verify ${IdStorage}"
-        fi
+        #### Create new external mounts
+        aExternalMounts=('rTorrent Complete' 'rTorrent Torrents' 'rTorrent Watch')
+        for sExternalMount in "${aExternalMounts[@]}"; do
+            echo
+            echo "Creating external mount ${sExternalMount} for ${seedUser}"
+            # Clean old external mount
+            nOldId=$(cmdMySQL 'NextCloud_db' "SELECT mount_id FROM nc_external_mounts WHERE mount_point='/${sExternalMount}';")
+            if [[ ${nOldId} -gt 0 ]]; then
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:delete ${nOldId} --yes"
+            fi
+            # Create new one
+            IdStorage=$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:create '${sExternalMount}' local null::null" | awk '{ print $5 }')
+            sUserDataDir="${sExternalMount##* }"
+            if [ -n "${IdStorage}" ]; then
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:applicable --add-user \"${seedUser}\" ${IdStorage}"
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:config ${IdStorage} datadir '/home/${seedUser}/rtorrent/${sUserDataDir,,}'"
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} filesystem_check_changes 'true'"
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encrypt 'false'"
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} previews 'true'"
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} enable_sharing 'true'"
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encoding_compatibility 'false'"
+                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:verify ${IdStorage}"
+            fi
+            # Scan files
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:scan --path=\"/${seedUser}/files/${sExternalMount}\""
 
-        #### Force a scan
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:scan --path=\"/${seedUser}/files/MySB_Home\""
+            unset nOldId IdStorage sUserDataDir
+        done
     fi
 
     unset IdStorage FnUserMail OC_PASS
@@ -316,7 +336,7 @@ if [ "${gbToInstall_Fail2Ban}" == "YES" ] || [ "${gbIsInstalled_Fail2Ban}" == "Y
     fi
 fi
 
-#### Scann all files
+#### Scan all files
 screen -dmS NextCloud_ScanAll su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:scan --all"
 
 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ integrity:check-core" >/tmp/nextcloud_check_integrity.log
