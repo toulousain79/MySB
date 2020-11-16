@@ -962,22 +962,37 @@ gfnDnscryptProxyConfig() {
 
 #### MD5 check
 gfnMd5Check() {
-    local sFile sName nReturn sLine
+    local sFile sName sLine nReturn
     nReturn=0
 
-    [ -z "${1}" ] && return 1
-    [ ! -f "${gsCheckSumFile}" ] && return 1
+    [[ -z "${1}" ]] && return 1
+    [[ ! -f "${gsCheckSumFile}" ]] && return 1
     sFile="${1}"
     sName="$(basename "${sFile}")"
-    sName="$(echo "${sName}" | tr '[:lower:]' '[:upper:]')"
+    sName="${sName,,}"
 
-    if [ -d "${MySB_InstallDir}"/templates/"${sName}"/ ]; then
-        find "${MySB_InstallDir}"/templates/"${sName}"/ -type f | while read -r sLine; do
-            [ "$(grep "${sLine}" "${gsCheckSumFile}")" != "$(md5sum "${sLine}")" ] && nReturn=1
-        done
-    else
-        [ "$(grep "${sFile}" "${gsCheckSumFile}")" != "$(md5sum "${sFile}")" ] && nReturn=1
+    # Fisrt, check if an upgrade was requested
+    nReturn="$(cmdMySQL 'MySB_db' "SELECT upgrade FROM repositories WHERE name='${sName}';")"
+    if [[ -z ${nReturn} ]] || [[ ${nReturn} -eq 0 ]]; then
+        case "${sName}" in
+            'php') sName="PHP7-FPM" ;;
+            'nginx') sName="Nginx" ;;
+        esac
+        nReturn="$(cmdMySQL 'MySB_db' "SELECT to_install FROM services WHERE serv_name='${sName}';")"
     fi
+
+    if [[ -z ${nReturn} ]] || [[ ${nReturn} -eq 0 ]]; then
+        if [[ -f "${sFile}" ]]; then
+            (! grep -q "$(md5sum "${sFile}")" "${gsCheckSumFile}") && nReturn=1
+        fi
+
+        if [[ -d "${MySB_InstallDir}"/templates/"${sName}"/ ]]; then
+            while read -r sLine; do
+                (! grep -q "$(md5sum "${sLine}")" "${gsCheckSumFile}") && nReturn=1
+            done < <(find "${MySB_InstallDir}"/templates/"${sName}"/ -type f)
+        fi
+    fi
+    [[ -z ${nReturn} ]] && nReturn=0
 
     return "${nReturn}"
 }

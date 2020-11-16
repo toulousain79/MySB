@@ -38,7 +38,7 @@
 			#pagespeed off;
 
 			location /nc {
-				rewrite ^ /nc/index.php$request_uri;
+				rewrite ^ /nc/index.php;
 			}
 
 			location ~ ^\/nc\/(?:build|tests|config|lib|3rdparty|templates|data)\/ {
@@ -48,14 +48,17 @@
 				deny all;
 			}
 
-			location ~ ^\/nc\/(?:index|remote|public|cron|core\/ajax\/update|status|ocs\/v[12]|updater\/.+|oc[ms]-provider\/.+)\.php(?:$|\/) {
+			location ~ ^\/nc\/(?:index|remote|public|cron|core\/ajax\/update|status|ocs\/v[12]|updater\/.+|oc[ms]-provider\/.+|.+\/richdocumentscode\/proxy)\.php(?:$|\/) {
 				fastcgi_split_path_info ^(.+?\.php)(\/.*|)$;
+				set $path_info $fastcgi_path_info;
+				try_files $fastcgi_script_name =404;
 				include fastcgi_params;
 				fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-				fastcgi_param PATH_INFO $fastcgi_path_info;
+				fastcgi_param PATH_INFO $path_info;
 				fastcgi_param HTTPS on;
-				#Avoid sending the security headers twice
+				# Avoid sending the security headers twice
 				fastcgi_param modHeadersAvailable true;
+				# Enable pretty urls
 				fastcgi_param front_controller_active true;
 				fastcgi_pass php-handler;
 				fastcgi_intercept_errors on;
@@ -72,23 +75,30 @@
 			location ~ ^\/nc\/.+[^\/]\.(?:css|js|woff2?|svg|gif|map)$ {
 				try_files $uri /nc/index.php$request_uri;
 				add_header Cache-Control "public, max-age=15778463";
-				# Add headers to serve security related headers  (It is intended
-				# to have those duplicated to the ones above)
-				# Before enabling Strict-Transport-Security headers please read
-				# into this topic first.
-				add_header Strict-Transport-Security "max-age=15768000; includeSubDomains; preload;";
-				add_header X-Content-Type-Options nosniff;
-				add_header X-XSS-Protection "1; mode=block";
-				add_header X-Robots-Tag none;
-				add_header X-Download-Options noopen;
-				add_header X-Permitted-Cross-Domain-Policies none;
-				add_header Referrer-Policy no-referrer;
+				# Add headers to serve security related headers (It is intended to
+				# have those duplicated to the ones above)
+				# Before enabling Strict-Transport-Security headers please read into
+				# this topic first.
+				#add_header Strict-Transport-Security "max-age=15768000; includeSubDomains; preload;" always;
+				#
+				# WARNING: Only add the preload option once you read about
+				# the consequences in https://hstspreload.org/. This option
+				# will add the domain to a hardcoded list that is shipped
+				# in all major browsers and getting removed from this list
+				# could take several months.
+				add_header Referrer-Policy "no-referrer" always;
+				add_header X-Content-Type-Options "nosniff" always;
+				add_header X-Download-Options "noopen" always;
+				add_header X-Frame-Options "SAMEORIGIN" always;
+				add_header X-Permitted-Cross-Domain-Policies "none" always;
+				add_header X-Robots-Tag "none" always;
+				add_header X-XSS-Protection "1; mode=block" always;
 
 				# Optional: Don't log access to assets
 				access_log off;
 			}
 
-			location ~ ^\/nc\/.+[^\/]\.(?:png|html|ttf|ico|jpg|jpeg)$ {
+			location ~ ^\/nc\/.+[^\/]\.(?:png|html|ttf|ico|jpg|jpeg|bcmap|mp4|webm)$ {
 				try_files $uri /nc/index.php$request_uri;
 				# Optional: Don't log access to other assets
 				access_log off;

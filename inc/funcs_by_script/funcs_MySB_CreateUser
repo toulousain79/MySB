@@ -128,6 +128,39 @@ gfnMinioUsersBuckets() {
     esac
 }
 
+#### NextCloud External Mounts
+gfnNextCloudExternalMounts() {
+    local aExternalMounts sExternalMount nOldId IdStorage sUserDataDir sUser
+    [[ -z "${1}" ]] && return 1
+    sUser="${1}"
+
+    aExternalMounts=('rTorrent Complete' 'rTorrent Torrents' 'rTorrent Watch')
+    for sExternalMount in "${aExternalMounts[@]}"; do
+        echo
+        echo "Creating external mount ${sExternalMount} for ${sUser}"
+        # Clean old external mount
+        nOldId=$(cmdMySQL 'NextCloud_db' "SELECT mount_id FROM nc_external_mounts WHERE mount_point='/${sExternalMount}';")
+        if [[ ${nOldId} -gt 0 ]]; then
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:delete ${nOldId} --yes"
+        fi
+        # Create new one
+        IdStorage=$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:create '${sExternalMount}' local null::null" | awk '{ print $5 }')
+        sUserDataDir="${sExternalMount##* }"
+        if [ -n "${IdStorage}" ]; then
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:applicable --add-user \"${sUser}\" ${IdStorage}"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:config ${IdStorage} datadir '/home/${sUser}/rtorrent/${sUserDataDir,,}'"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} filesystem_check_changes 'false'"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encrypt 'false'"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} previews 'true'"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} enable_sharing 'true'"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encoding_compatibility 'false'"
+            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:verify ${IdStorage}"
+        fi
+        # Scan files
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:scan --path=\"/${sUser}/files/${sExternalMount}\""
+    done
+}
+
 #### NextCloud account manage
 gfnNextCloudAccountManage() {
     local sSwitch sUserAccount sPassword sUserMail
@@ -145,18 +178,8 @@ gfnNextCloudAccountManage() {
             sUserMail="$(${binMySQL} "SELECT users_email FROM users WHERE users_ident='${sUserAccount}';")"
             su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${sUserAccount}\" settings email \"${sUserMail}\""
             su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${sUserAccount}\" core timezone ${gsTimeZone}"
-            # Create new external mount (MySB_Home)
-            IdStorage=$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:create MySB_Home local null::null" | awk '{ print $5 }')
-            if [ -n "${IdStorage}" ]; then
-                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:applicable --add-user \"${seedUser}\" ${IdStorage}" &>/dev/null
-                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:config ${IdStorage} datadir '/home/${seedUser}/'"
-                # su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} filesystem_check_changes 'false'"
-                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encrypt 'false'"
-                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} previews 'true'"
-                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} enable_sharing 'true'"
-                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encoding_compatibility 'false'"
-                su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:verify ${IdStorage}" &>/dev/null
-            fi
+            # Create new external mounts
+            gfnNextCloudExternalMounts "${sUserAccount}"
             ;;
         'edit')
             su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:resetpassword --password-from-env ${sUserAccount}" &>/dev/null

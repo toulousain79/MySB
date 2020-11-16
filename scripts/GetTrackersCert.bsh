@@ -69,9 +69,24 @@ case "${gsSwitch}" in
         ;;
 esac
 
+#### Check new hostname for some trackers (aka YGG...)
+# TackersList="$(cmdMySQL 'MySB_db' "SELECT tracker_proto,tracker,tracker_port FROM trackers_list WHERE is_active='1' AND to_delete!='1';")"
+# for Tracker in ${TackersList}; do
+#     sProto="$(echo "${Tracker}" | awk '{split($0,a,"|"); print a[1]}')"
+#     sHostname="$(echo "${Tracker}" | awk '{split($0,a,"|"); print a[2]}')"
+#     sPort="$(echo "${Tracker}" | awk '{split($0,a,"|"); print a[3]}')"
+
+#     sNewLocation="$(curl -ILq "${sProto}://${sHostname}:${sPort}" 2>/dev/null | grep 'location:' | cut -d/ -f3)"
+#     if [[ -n ${sNewLocation} ]] && [[ ${sHostname} != "${sNewLocation}" ]]; then
+#         log_daemon_msg "${UpdateTrackerDomain} ${sHostname} to ${sNewLocation}"
+#         cmdMySQL 'MySB_db' "UPDATE trackers_list SET tracker='${sNewLocation}' WHERE tracker_proto='${sProto}' AND tracker='${sHostname}' AND tracker_port='${sPort}';"
+#         gfnStatusLSB
+#     fi
+# done
+
 #### Removing deleted trackers from the portal
 if [[ ${DoDeleteTracker} -eq 1 ]]; then
-    RemovedTrackersList="$(cmdMySQL 'MySB_db' "SELECT tracker FROM trackers_list WHERE to_delete = '1';")"
+    RemovedTrackersList="$(cmdMySQL 'MySB_db' "SELECT tracker FROM trackers_list WHERE to_delete='1';")"
     for RemovedTracker in ${RemovedTrackersList}; do
         log_daemon_msg "${DeleteTracker} ${RemovedTracker}"
         rm -f "${MySB_InstallDir}"/ssl/trackers/*"${RemovedTracker}".pem

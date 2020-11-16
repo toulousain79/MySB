@@ -65,13 +65,32 @@ case "${1}" in
         #### To call for every upgrade - EoF
         ####################################
 
-        #### Nextcloud - Force use of Redis unix socket
-        if [[ -f "${gsNextCloudDir}"/config/config.php ]]; then
+        # md5sum file
+        rm -fv "${gsCheckSumFile}"
+        ${binCURL//silent/progress} -o "${gsCheckSumFile}" https://raw.githubusercontent.com/toulousain79/MySB_files/v99.99/md5sum.txt
+
+        #### NextCloud Upgrade to 19.0.4
+        echo -e "${Upgrade_InstallingConfiguring} NextCloud to 19.0.4..."
+        if [ "${gbToInstall_NextCloud}" == "YES" ] || [ "${gbIsInstalled_NextCloud}" == "YES" ]; then
+            cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='1', version='19.0.4', file='nextcloud_v19.0.4.zip', url='https://download.nextcloud.com/server/releases/nextcloud-19.0.4.zip' WHERE name='NextCloud';" -v
+            cmdMySQL 'MySB_db' "UPDATE services SET to_install='1' WHERE serv_name='NextCloud';" -v
+            source "${MySB_InstallDir}"/inc/vars
+            gfnGetRepoValues 'NextCloud'
+            ${binCURL} -o "${MySB_Files}/${gsRepoFile}" "${gsRepoURL}"
+
+            gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/NextCloud" 'UPGRADE'
+
+            #### Nextcloud - Force use of Redis unix socket (after upgrade to 19.0.4)
             sed -i \
                 -e "s,'host' => '127.0.0.1','host' => '/var/run/redis/redis-server.sock',g;" \
                 -e "s,'port' => 6379,'port' => 0,g;" \
-                -e "s,'timeout' => 1.5,'timeout' => 0,g;" \
                 "${gsNextCloudDir}"/config/config.php
+
+            cmdMySQL 'MySB_db' "UPDATE services SET to_install='1' WHERE serv_name='NextCloud';" -v
+            cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='1', version='20.0.1', file='nextcloud_v20.0.1.zip', url='https://download.nextcloud.com/server/releases/nextcloud-20.0.1.zip' WHERE name='NextCloud';" -v
+            source "${MySB_InstallDir}"/inc/vars
+        else
+            echo -e "${Global_NothingToDo}"
         fi
         ;;
 
@@ -219,6 +238,9 @@ case "${1}" in
 
         #### Disable maintenance mode
         # gfnUpgradeInProgress "off"
+
+        #### Reset services to install
+        cmdMySQL 'MySB_db' "UPDATE services SET to_install='0' WHERE 1;" -v
 
         #### Flush mail queue
         if gfnCheckCommand 0 postfix && gfnGetPid postfix; then postfix flush; fi
