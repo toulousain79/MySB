@@ -69,9 +69,26 @@ case "${1}" in
         rm -fv "${gsCheckSumFile}"
         ${binCURL//silent/progress} -o "${gsCheckSumFile}" https://raw.githubusercontent.com/toulousain79/MySB_files/v99.99/md5sum.txt
 
-        #### NextCloud Upgrade to 19.0.4
+        #### Nextcloud - Rename database table prefix _nc to _oc (removove in v20...)
+        if [[ "${gbIsInstalled_NextCloud}" == "YES" ]]; then
+            gfnManageServices stop "cron ${binPhpService}"
+            nDbSize=$(mysql --database=NextCloud_db --wait --connect-timeout=10 --skip-column-names --skip-column-names -e "SELECT ROUND(SUM(data_length) / 1024 / 1024, 0) FROM information_schema.TABLES WHERE table_schema='NextCloud_db';")
+            if (mysqldump --single-transaction --order-by-primary --compress NextCloud_db | pv --progress --size "${nDbSize}"m >/tmp/NextCloud_db.dump.sql); then
+                cp -fv "${gsNextCloudDir}"/config/config.php /tmp/nextcloud_config.php
+
+                sAllTables=$(mysql NextCloud_db -e "show tables" | tail -n +2)
+                for sTable in ${sAllTables}; do
+                    mysql NextCloud_db -e "RENAME TABLE ${sTable} to ${sTable//nc_/oc_}"
+                done
+                sed -i "s/dbtableprefix'\s*=>\s*'nc_'/dbtableprefix' => 'oc_'/" "${gsNextCloudDir}"/config/config.php
+            else
+                exit 1
+            fi
+        fi
+
+        #### NextCloud - Upgrade to 19.0.4
         echo -e "${Upgrade_InstallingConfiguring} NextCloud to 19.0.4..."
-        if [ "${gbToInstall_NextCloud}" == "YES" ] || [ "${gbIsInstalled_NextCloud}" == "YES" ]; then
+        if [[ "${gbToInstall_NextCloud}" == "YES" ]] || [[ "${gbIsInstalled_NextCloud}" == "YES" ]]; then
             cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='1', version='19.0.4', file='nextcloud_v19.0.4.zip', url='https://download.nextcloud.com/server/releases/nextcloud-19.0.4.zip' WHERE name='NextCloud';" -v
             cmdMySQL 'MySB_db' "UPDATE services SET to_install='1' WHERE serv_name='NextCloud';" -v
             source "${MySB_InstallDir}"/inc/vars
@@ -80,7 +97,7 @@ case "${1}" in
 
             gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/NextCloud" 'UPGRADE'
 
-            #### Nextcloud - Force use of Redis unix socket (after upgrade to 19.0.4)
+            #### Force use of Redis unix socket (after upgrade to 19.0.4)
             sed -i \
                 -e "s,'host' => '127.0.0.1','host' => '/var/run/redis/redis-server.sock',g;" \
                 -e "s,'port' => 6379,'port' => 0,g;" \
