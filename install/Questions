@@ -468,9 +468,14 @@ DisplaySurvey() {
                         ;;
                 esac
             done
+
             if [ "${gbToInstall_OpenVPN}" == "${Global_YES}" ]; then
-                cmdMySQL 'MySB_db' "UPDATE services SET to_install='${bToInstall}', used='1' WHERE serv_name='Samba' OR serv_name='NFS';" -v >>"${sLogFile}"
+                bToInstall=1
+            else
+                bToInstall=0
             fi
+            cmdMySQL 'MySB_db' "UPDATE services SET to_install='${bToInstall}', used='1' WHERE serv_name='Samba' OR serv_name='NFS';" -v >>"${sLogFile}"
+            unset sValue nLoop bToInstall
         fi
 
         if [ "${gbToInstall_OpenVPN}" == "${Global_YES}" ] || [ "${gbIsInstalled_OpenVPN}" == "YES" ]; then
@@ -838,8 +843,10 @@ DisplaySurvey() {
         cmdMySQL 'MySB_db' "UPDATE services SET port_tcp1='${gsPort_FTP}', port_tcp2='${gsPort_FTP_Data}', port_tcp3='65000:65535', port_udp1='', port_udp2='', port_udp3='', ports_udp_list='' WHERE serv_name='VSFTPd';" -v
 
         if [ "${TYPE}" == "INSTALL" ]; then
-            # 'smtp' table
-            cmdMySQL 'MySB_db' "UPDATE smtp SET smtp_provider='${gsSmtpProvider}', smtp_username='${SMTP_Username}', smtp_passwd='${SMTP_Password}', smtp_email='${gsMainUserEmail}' WHERE id_smtp='1';" -v
+            # 'smtp' table (values without password)
+            cmdMySQL 'MySB_db' "UPDATE smtp SET smtp_provider='${gsSmtpProvider}', smtp_username='${SMTP_Username}', smtp_email='${gsMainUserEmail}' WHERE id_smtp='1';" -v
+            # only password without verbosity
+            cmdMySQL 'MySB_db' "UPDATE smtp SET smtp_passwd='${SMTP_Password}' WHERE id_smtp='1';"
 
             # 'users' table (Main user)
             cmdMySQL 'MySB_db' "UPDATE users SET users_ident='${gsMainUserName}', users_email='${gsMainUserEmail}', sftp='1', sudo='1', admin='1' WHERE users_ident='MySB' OR admin='1';" -v
