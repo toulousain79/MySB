@@ -105,7 +105,7 @@ function ChangeNextCloudLanguage($user, $language) {
 	$NextCloudDatas = $MySB_DB->get("services", "is_installed", ["serv_name" => "NextCloud"]);
 
 	if ( $NextCloudDatas["is_installed"] == '1' ) {
-		$NextCloud_DB->update("nc_preferences", ["configvalue" => "$language"], ["AND" => [
+		$NextCloud_DB->update("oc_preferences", ["configvalue" => "$language"], ["AND" => [
 																						"userid" => "$user",
 																						"configkey" => "lang"
 																					]]);
@@ -554,8 +554,8 @@ function MenuDisplayChildren($page, $current, $startmenu = true) {
 								$to_display .= Tooltip_Apply_RestartRtorrent;
 								break;
 							case 'Reload_rTorrent':
-									$to_display .= Tooltip_Apply_ReloadRtorrent;
-									break;
+								$to_display .= Tooltip_Apply_ReloadRtorrent;
+								break;
 							default:
 								break;
 						}

@@ -27,8 +27,8 @@ nReturn=${nReturn}
 [[ ${nReturn} -gt 0 ]] && exit "${nReturn}"
 
 if [ -z "${vars}" ] || [ "${vars}" -eq 0 ]; then
-    # shellcheck source=ci/check/00-libs.sh
-    . "/builds/${CI_PROJECT_PATH}/ci/check/00-libs.sh"
+    # shellcheck source=ci/common/00-libs.sh
+    . "/builds/${CI_PROJECT_PATH}/ci/common/00-libs.sh"
 else
     nReturn=${nReturn}
 fi
@@ -128,7 +128,7 @@ esac
 
 case "${CHECK_METHOD}" in
     'full' | 'install' | 'integ')
-        # shellcheck source=/dev/null
+        # shellcheck source=.etc/MySB/config
         . /etc/MySB/config
         sFilesList="$(find "${MySB_InstallDir}"/inc/funcs_by_script/ -type f)"
         if [ -n "${sFilesList}" ]; then
@@ -140,8 +140,8 @@ case "${CHECK_METHOD}" in
             else
                 # shellcheck source=/dev/null
                 . "${MySB_InstallDir}"/inc/vars
-                # shellcheck source=/dev/null
-                . "${MySB_InstallDir}"/ci/integ/global.sh
+                # shellcheck source=ci/integ/inc/global.sh
+                . "${MySB_InstallDir}"/ci/integ/inc/global.sh
 
                 for sFile in ${sFilesList}; do
                     sFileName="$(basename "${sFile}")"
@@ -156,7 +156,8 @@ case "${CHECK_METHOD}" in
                     # shellcheck source=/dev/null
                     . "${sFile}"
 
-                    sIntegFile="${MySB_InstallDir}/ci/integ/$(basename "${sFile}").sh"
+                    sIntegFile="${MySB_InstallDir}/ci/integ/funcs/
+                    $(basename "${sFile}").sh"
                     sIntegFile="${sIntegFile//.bsh/}"
                     if [ -f "${sIntegFile}" ]; then
                         . "${sIntegFile}"

@@ -1,0 +1,84 @@
+#!/bin/bash
+# ----------------------------------
+#  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
+#   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
+#	_\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
+#	 _\/\\\\///\\\/\\\/_\/\\\___\//\\\/\\\____\////\\\_________\/\\\\\\\\\\\\\\__
+#	  _\/\\\__\///\\\/___\/\\\____\//\\\\\________\////\\\______\/\\\/////////\\\_
+#	   _\/\\\____\///_____\/\\\_____\//\\\____________\////\\\___\/\\\_______\/\\\_
+#		_\/\\\_____________\/\\\__/\\_/\\\______/\\\______\//\\\__\/\\\_______\/\\\_
+#		 _\/\\\_____________\/\\\_\//\\\\/______\///\\\\\\\\\\\/___\/\\\\\\\\\\\\\/__
+#		  _\///______________\///___\////__________\///////////_____\/////////////_____
+#			By toulousain79 ---> https://github.com/toulousain79/
+#
+######################################################################
+#
+#	Copyright (c) 2013 toulousain79 (https://github.com/toulousain79/)
+#	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	--> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+######################################################################
+{ [ -z "${vars}" ] || [ "${vars}" -ne 1 ]; } && {
+    echo "Please load 'vars' file before..."
+    exit 0
+}
+##################### FIRST LINE #####################################
+
+gfnNginxCakeboxLight() {
+    local sCakeboxDirEscaped seedUser
+
+    if [ "${gbToInstall_Cakebox}" == "YES" ] || [ "${gbIsInstalled_Cakebox}" == "YES" ]; then
+        sCakeboxDirEscaped="${gsCakeboxDir//\//\\\/}"
+        # Site-Enabled
+        if [ -h /etc/nginx/sites-enabled/cakebox ]; then rm -vf /etc/nginx/sites-enabled/cakebox; fi
+        install -v -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.site-enabled.cakebox.tmpl /etc/nginx/sites-available/cakebox
+        perl -pi -e "s/<server_name>/${gsHostNameFqdn}/g" /etc/nginx/sites-available/cakebox
+        perl -pi -e "s/<cakebox_rootdir>/${sCakeboxDirEscaped}/g" /etc/nginx/sites-available/cakebox
+        if [ ! -h /etc/nginx/sites-enabled/cakebox ]; then ln -sv /etc/nginx/sites-available/cakebox /etc/nginx/sites-enabled/cakebox; fi
+        # Location
+        install -v -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.locations.cakebox.conf.tmpl /etc/nginx/locations/Cakebox-Light.conf
+        # Proxy
+        install -v -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.proxy.cakebox.conf.tmpl /etc/nginx/proxy/Cakebox-Light.conf
+        # RPC
+        gfnListCountUsers 'normal'
+        for seedUser in ${gsUsersList}; do
+            install -v -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.rpc.user.cakebox.tmpl /etc/nginx/rpc/"${seedUser}".cakebox
+            perl -pi -e "s/<username>/${seedUser}/g" /etc/nginx/rpc/"${seedUser}".cakebox
+        done
+    fi
+}
+
+gfnNginxSeedboxManager() {
+    if [ "${gbToInstall_Manager}" == "YES" ] || [ "${gbIsInstalled_Manager}" == "YES" ]; then
+        install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/nginx/etc.nginx.locations.seedbox-manager.conf.tmpl /etc/nginx/locations/Seedbox-Manager.conf
+        perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /etc/nginx/locations/Seedbox-Manager.conf
+    fi
+}
+
+gfnNginxNextcloud() {
+    if [ "${gbToInstall_NextCloud}" == "YES" ] || [ "${gbIsInstalled_NextCloud}" == "YES" ]; then
+        install -v -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.locations.nextcloud.conf.tmpl /etc/nginx/locations/NextCloud.conf
+        perl -pi -e "s/<MySB_InstallDir>/${gsInstallDirEscaped}/g" /etc/nginx/locations/NextCloud.conf
+    fi
+}
+
+gfnNginxPlexMediaServer() {
+    if [ "${gbToInstall_PlexMedia}" == "YES" ] || [ "${gbIsInstalled_PlexMedia}" == "YES" ]; then
+        install -v -o root -g root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.locations.plexmediaserver.conf.tmpl /etc/nginx/locations/PlexMediaServer.conf
+        install -v -o root -g root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.upstream.plexmediaserver.conf.tmpl /etc/nginx/upstream/PlexMediaServer.conf
+        install -v -o root -g root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.proxy.plexmediaserver.conf.tmpl /etc/nginx/proxy/PlexMediaServer.conf
+    fi
+}
+
+gfnNginxTautulli() {
+    if [ "${gbToInstall_PlexMedia}" == "YES" ] || [ "${gbIsInstalled_PlexMedia}" == "YES" ]; then
+        install -v -o root -g root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.locations.tautulli.conf.tmpl /etc/nginx/locations/Tautulli.conf
+        install -v -o root -g root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.proxy.tautulli.conf.tmpl /etc/nginx/proxy/Tautulli.conf
+        perl -pi -e "s/<MainUser>/${gsMainUserName}/g" /etc/nginx/locations/Tautulli.conf
+    fi
+}
+
+##################### LAST LINE ######################################

@@ -65,31 +65,50 @@ case "${1}" in
         #### To call for every upgrade - EoF
         ####################################
 
-        #### rTorrent cleaning
-        # aAllPackages=(rtorrent buildtorrent mktorrent mediainfo ffmpeg libcppunit-dev zlib1g-dev libncursesw5-dev libxmlrpc-c++8-dev)
-        # gfnPackagesManage purge "${aAllPackages[@]}"
+        # md5sum file
+        rm -fv "${gsCheckSumFile}"
+        ${binCURL//silent/progress} -o "${gsCheckSumFile}" https://raw.githubusercontent.com/toulousain79/MySB_files/v7.3/md5sum.txt
 
-        #### ruTorrent proxy users port
-        nProxyPort="$(cmdMySQL 'MySB_db' "SELECT max(proxy_port) FROM users;")"
-        [ -z "${nProxyPort}" ] && nProxyPort=8080
-        gfnListCountUsers 'normal'
-        for sUser in ${gsUsersList}; do
-            cmdMySQL 'MySB_db' "UPDATE users SET proxy_port='${nProxyPort}' WHERE users_ident='${sUser}';" -v
-            ((nProxyPort++))
-        done
+        #### Nextcloud - Rename database table prefix _nc to _oc (removove in v20...)
+        if [[ "${gbIsInstalled_NextCloud}" == "YES" ]]; then
+            gfnManageServices stop "cron ${binPhpService}"
+            nDbSize=$(mysql --database=NextCloud_db --wait --connect-timeout=10 --skip-column-names --skip-column-names -e "SELECT ROUND(SUM(data_length) / 1024 / 1024, 0) FROM information_schema.TABLES WHERE table_schema='NextCloud_db';")
+            if (mysqldump --single-transaction --order-by-primary --compress NextCloud_db | pv --progress --size "${nDbSize}"m >/tmp/NextCloud_db.dump.sql); then
+                cp -fv "${gsNextCloudDir}"/config/config.php /tmp/nextcloud_config.php
 
-        #### Minio
-        usermod -s /usr/sbin/nologin minio
+                sAllTables=$(mysql NextCloud_db -e "show tables" | tail -n +2)
+                for sTable in ${sAllTables}; do
+                    mysql NextCloud_db -e "RENAME TABLE ${sTable} to ${sTable//nc_/oc_}"
+                done
+                sed -i "s/dbtableprefix'\s*=>\s*'nc_'/dbtableprefix' => 'oc_'/" "${gsNextCloudDir}"/config/config.php
+            else
+                exit 1
+            fi
+        fi
 
-        #### DNScrypt-proxy
-        gfnManageServices stop "dnscrypt-proxy"
-        cmdMySQL 'MySB_db' "UPDATE services SET to_install = '1' WHERE serv_name='DNScrypt-proxy';" -v
-        gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/DNScrypt" 'UPGRADE'
-        gfnManageServices start "dnscrypt-proxy"
+        #### NextCloud - Upgrade to 19.0.4
+        echo -e "${Upgrade_InstallingConfiguring} NextCloud to 19.0.4..."
+        if [[ "${gbToInstall_NextCloud}" == "YES" ]] || [[ "${gbIsInstalled_NextCloud}" == "YES" ]]; then
+            cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='1', version='19.0.4', file='nextcloud_v19.0.4.zip', url='https://download.nextcloud.com/server/releases/nextcloud-19.0.4.zip' WHERE name='NextCloud';" -v
+            cmdMySQL 'MySB_db' "UPDATE services SET to_install='1' WHERE serv_name='NextCloud';" -v
+            source "${MySB_InstallDir}"/inc/vars
+            gfnGetRepoValues 'NextCloud'
+            ${binCURL//silent/progress} -o "${MySB_Files}/${gsRepoFile}" "${gsRepoURL}"
 
-        #### Clean
-        rm -fv /var/log/samba/.log
-        rm -rfv "${MySB_InstallDir}"/web/logs/*
+            gfnScriptInvoke 'ScreenSTD' "${MySB_InstallDir}/install/NextCloud" 'UPGRADE'
+
+            #### Force use of Redis unix socket (after upgrade to 19.0.4)
+            sed -i \
+                -e "s,'host' => '127.0.0.1','host' => '/var/run/redis/redis-server.sock',g;" \
+                -e "s,'port' => 6379,'port' => 0,g;" \
+                "${gsNextCloudDir}"/config/config.php
+
+            cmdMySQL 'MySB_db' "UPDATE services SET to_install='1' WHERE serv_name='NextCloud';" -v
+            cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='1', version='20.0.1', file='nextcloud_v20.0.1.zip', url='https://download.nextcloud.com/server/releases/nextcloud-20.0.1.zip' WHERE name='NextCloud';" -v
+            source "${MySB_InstallDir}"/inc/vars
+        else
+            echo -e "${Global_NothingToDo}"
+        fi
         ;;
 
     "AFTER" | "INIT")
@@ -234,8 +253,8 @@ case "${1}" in
             fi
         done
 
-        #### Disable maintenance mode
-        gfnUpgradeInProgress "off"
+        #### Reset services to install
+        cmdMySQL 'MySB_db' "UPDATE services SET to_install='0' WHERE 1;" -v
 
         #### Flush mail queue
         if gfnCheckCommand 0 postfix && gfnGetPid postfix; then postfix flush; fi

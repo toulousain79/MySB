@@ -211,7 +211,7 @@ function fnInstallPlex() {
     fi
 
     # Update DB
-    cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='Plex Media Server';" -v
+    cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='1' WHERE serv_name='Plex Media Server';" -v
 }
 
 # Install Tautulli
@@ -289,9 +289,9 @@ function fnInstallTautulli() {
             systemctl enable tautulli.service
 
             # NginX
-            install -v -o root -g root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.locations.tautulli.conf.tmpl /etc/nginx/locations/Tautulli.conf
-            install -v -o root -g root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.proxy.tautulli.conf.tmpl /etc/nginx/proxy/Tautulli.conf
-            perl -pi -e "s/<MainUser>/${gsMainUserName}/g" /etc/nginx/locations/Tautulli.conf
+            # shellcheck source=inc/funcs_by_script/funcs_Nginx
+            source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Nginx
+            gfnNginxTautulli
 
             # Update certificates for Python
             update-ca-certificates --fresh &>/dev/null
@@ -336,7 +336,7 @@ function fnInstallTautulli() {
 
     if [ -f "${gsRepoDir}"/Tautulli.py ]; then
         # Update DB
-        cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='Tautulli';" -v
+        cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='1' WHERE serv_name='Tautulli';" -v
         # Disable the upgrade job
         # cmdMySQL 'MySB_db' "UPDATE repositories SET upgrade='0' WHERE name='Tautulli';" -v
     fi
@@ -357,9 +357,9 @@ if [ "${gbToInstall_PlexMedia}" == "YES" ]; then
     fnInstallPlex
 
     #### NginX
-    install -v -o root -g root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.locations.plexmediaserver.conf.tmpl /etc/nginx/locations/PlexMediaServer.conf
-    install -v -o root -g root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.upstream.plexmediaserver.conf.tmpl /etc/nginx/upstream/PlexMediaServer.conf
-    install -v -o root -g root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.proxy.plexmediaserver.conf.tmpl /etc/nginx/proxy/PlexMediaServer.conf
+    # shellcheck source=inc/funcs_by_script/funcs_Nginx
+    source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Nginx
+    gfnNginxPlexMediaServer
 
     if gfnCheckCommand 0 plexmediaserver; then
         fnInstallTautulli

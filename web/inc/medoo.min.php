@@ -2,9 +2,9 @@
 /*!
  * Medoo database framework
  * https://medoo.in
- * Version 1.7.8
+ * Version 1.7.10
  *
- * Copyright 2019, Angel Lai
+ * Copyright 2020, Angel Lai
  * Released under the MIT license
  */
 
@@ -445,15 +445,20 @@ class Medoo
 		}
 
 		$query = preg_replace_callback(
-			'/((FROM|TABLE|INTO|UPDATE)\s*)?\<([a-zA-Z0-9_\.]+)\>/i',
+			'/(([`\']).*?)?((FROM|TABLE|INTO|UPDATE|JOIN)\s*)?\<(([a-zA-Z0-9_]+)(\.[a-zA-Z0-9_]+)?)\>(.*?\2)?/i',
 			function ($matches)
 			{
-				if (!empty($matches[ 2 ]))
+				if (!empty($matches[ 2 ]) && isset($matches[ 8 ]))
 				{
-					return $matches[ 2 ] . ' ' . $this->tableQuote($matches[ 3 ]);
+					return $matches[ 0 ];
 				}
 
-				return $this->columnQuote($matches[ 3 ]);
+				if (!empty($matches[ 4 ]))
+				{
+					return $matches[ 1 ] . $matches[ 4 ] . ' ' . $this->tableQuote($matches[ 5 ]);
+				}
+
+				return $matches[ 1 ] . $this->columnQuote($matches[ 5 ]);
 			},
 			$raw->value);
 
@@ -927,7 +932,7 @@ class Medoo
 				}
 				elseif ($raw = $this->buildRaw($ORDER, $map))
 				{
-					$where_clause .= ' ORDER BY ' . $raw;
+					$where_clause .= ' ORDER BY ' . $raw;	
 				}
 				else
 				{
@@ -945,7 +950,7 @@ class Medoo
 					{
 						$LIMIT = [0, $LIMIT];
 					}
-
+					
 					if (
 						is_array($LIMIT) &&
 						is_numeric($LIMIT[ 0 ]) &&
@@ -1215,7 +1220,7 @@ class Medoo
 			else
 			{
 				$current_stack = [];
-
+				
 				$this->dataMap($data, $columns, $column_map, $current_stack, false, $result);
 
 				$result[] = $current_stack;

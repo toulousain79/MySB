@@ -1,81 +1,182 @@
 ---
 stages:
-    - scheduled_check_72
-    - scheduled_check_develop
-    - scheduled_check_bugfix
-    - scheduled_check_master
-    - check_bugfix_before_merge
-    - check_master_after_merge
+  - scheduled_check_bugfix_basic
+  - scheduled_check_bugfix_integ
+
+  - scheduled_check_develop_basic
+  - scheduled_check_develop_integ
+
+  - scheduled_check_72_basic
+  - scheduled_check_72_integ
+
+  - scheduled_check_master_basic
+  - scheduled_check_master_integ
+
+  - check_bugfix_before_merge_basic
+  - check_bugfix_before_merge_integ
+
+  - check_master_after_merge_basic
+  - check_master_after_merge_integ
 
 # #### Templates - BoF
 .tmpl_check: &tmpl_check
-    image: ${REGISTRY_IMAGES}
-    script:
-        - |
-            for script in $(find ${CI_PROJECT_DIR}/ci/check/ -type f -name "[0-9][0-9]-*.sh" | sort -n); do
-                echo ${script}
-            done
-            for script in $(find ${CI_PROJECT_DIR}/ci/check/ -type f -name "[0-9][0-9]-*.sh" | sort -n); do
-                . ${script}
-            done
+  image: ${REGISTRY_IMAGES}
+  script:
+    - |
+      echo ${CI_PROJECT_DIR}/ci/common/00-libs.sh
+      . ${CI_PROJECT_DIR}/ci/common/00-libs.sh
+      for script in $(find ${CI_PROJECT_DIR}/ci/${CHECK_DIR}/ -type f -name "[0-9][0-9]-*.sh" | sort -n); do
+          echo ${script}
+      done
+      echo ${CI_PROJECT_DIR}/ci/common/999-end_script.sh
+
+      for script in $(find ${CI_PROJECT_DIR}/ci/${CHECK_DIR}/ -type f -name "[0-9][0-9]-*.sh" | sort -n); do
+          . ${script}
+      done
+      . ${CI_PROJECT_DIR}/ci/common/999-end_script.sh
 # #### Templates - EoF
 
 # #### Project check scheduled - BoF
-Scheduled Bugfix:
-    stage: scheduled_check_bugfix
-    only:
-      refs:
-        - schedules
-        - bugfix
-      variables:
-        - $RELEASE == "bugfix"
-    <<: *tmpl_check
+Scheduled Bugfix Basic Tests:
+  stage: scheduled_check_bugfix_basic
+  variables:
+    CHECK_DIR: 'basic'
+  only:
+    refs:
+      - schedules
+      - bugfix
+    variables:
+      - $RELEASE == "bugfix"
+  <<: *tmpl_check
 
-v7.2:
-    stage: scheduled_check_72
-    only:
-      refs:
-        - schedules
-        - v7.2
-      variables:
-        - $RELEASE == "72"
-    <<: *tmpl_check
+Scheduled Bugfix Integ Tests:
+  stage: scheduled_check_bugfix_integ
+  variables:
+    CHECK_DIR: 'integ'
+  only:
+    refs:
+      - schedules
+      - bugfix
+    variables:
+      - $RELEASE == "bugfix"
+  <<: *tmpl_check
+  when: on_success
 
-Scheduled Develop:
-    stage: scheduled_check_develop
-    only:
-      refs:
-        - schedules
-        - v99.99
-      variables:
-        - $RELEASE == "develop"
-    <<: *tmpl_check
+Scheduled Develop Basic Tests:
+  stage: scheduled_check_develop_basic
+  variables:
+    CHECK_DIR: 'basic'
+  only:
+    refs:
+      - schedules
+      - v99.99
+    variables:
+      - $RELEASE == "develop"
+  <<: *tmpl_check
 
-Scheduled Prod:
-    stage: scheduled_check_master
-    only:
-      refs:
-        - schedules
-        - v7.2
-      variables:
-        - $RELEASE == "prod"
-    <<: *tmpl_check
+Scheduled Develop Integ Tests:
+  stage: scheduled_check_develop_integ
+  variables:
+    CHECK_DIR: 'integ'
+  only:
+    refs:
+      - schedules
+      - v99.99
+    variables:
+      - $RELEASE == "develop"
+  <<: *tmpl_check
+  when: on_success
+
+v7.2 Basic Tests:
+  stage: scheduled_check_72_basic
+  variables:
+    CHECK_DIR: 'basic'
+  only:
+    refs:
+      - schedules
+      - v7.2
+    variables:
+      - $RELEASE == "72"
+  <<: *tmpl_check
+
+v7.2 Integ Tests:
+  stage: scheduled_check_72_integ
+  variables:
+    CHECK_DIR: 'integ'
+  only:
+    refs:
+      - schedules
+      - v7.2
+    variables:
+      - $RELEASE == "72"
+  <<: *tmpl_check
+  when: on_success
+
+Scheduled Prod Basic Tests:
+  stage: scheduled_check_master_basic
+  variables:
+    CHECK_DIR: 'basic'
+  only:
+    refs:
+      - schedules
+      - v7.2
+    variables:
+      - $RELEASE == "prod"
+  <<: *tmpl_check
+
+Scheduled Prod Integ Tests:
+  stage: scheduled_check_master_integ
+  variables:
+    CHECK_DIR: 'integ'
+  only:
+    refs:
+      - schedules
+      - v7.2
+    variables:
+      - $RELEASE == "prod"
+  <<: *tmpl_check
+  when: on_success
 # #### Project check scheduled - EoF
 
 # #### Project check merge request - BoF
-Bugfix:
-    stage: check_bugfix_before_merge
-    only:
-      refs:
-        - merge_requests
-    <<: *tmpl_check
+Bugfix Basic Tests:
+  stage: check_bugfix_before_merge_basic
+  variables:
+    CHECK_DIR: 'basic'
+  only:
+    refs:
+      - merge_requests
+  <<: *tmpl_check
 
-Prod:
-    stage: check_master_after_merge
-    <<: *tmpl_check
-    only:
-        - v7.2
-    except:
-        - schedules
-    when: on_success
+Bugfix Integ Tests:
+  stage: check_bugfix_before_merge_integ
+  variables:
+    CHECK_DIR: 'integ'
+  only:
+    refs:
+      - merge_requests
+  when: on_success
+  <<: *tmpl_check
+
+Prod Basic Tests:
+  stage: check_master_after_merge_basic
+  variables:
+    CHECK_DIR: 'basic'
+  <<: *tmpl_check
+  only:
+    - v7.2
+  except:
+    - schedules
+  when: on_success
+
+Prod Integ Tests:
+  stage: check_master_after_merge_integ
+  variables:
+    CHECK_DIR: 'integ'
+  <<: *tmpl_check
+  only:
+    - v7.2
+  except:
+    - schedules
+  when: on_success
 # #### Project check merge request - EoF

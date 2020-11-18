@@ -57,12 +57,15 @@ if [ "${END}" == "ON" ]; then
         /sbin/ldconfig
         gfnStatusLSB
     fi
-    log_daemon_msg "${IncAfter_CleaningCacheSystem}"
-    #### Free cache server
-    ## To free pagecache, dentries and inodes
-    sync
-    [ ! -f /.dockerenv ] && echo 3 >/proc/sys/vm/drop_caches
-    gfnStatusLSB
+
+    if [ ! -f /.dockerenv ]; then
+        log_daemon_msg "${IncAfter_CleaningCacheSystem}"
+        #### Free cache server
+        ## To free pagecache, dentries and inodes
+        sync
+        echo 3 >/proc/sys/vm/drop_caches
+        gfnStatusLSB
+    fi
 fi
 
 #### 3 - Specify the log directory
@@ -94,6 +97,9 @@ case "${gsScriptName}" in
         if [ -f /tmp/"${gsScriptName}".log ]; then
             mv /tmp/"${gsScriptName}".log "${gsLogFile}"
         fi
+
+        #### Reset all logs in /var/log
+        gfnCleanVarLog
         ;;
     MySB_CreateUser)
         if (screen -ls | grep -q 'MySB'); then
@@ -116,6 +122,9 @@ case "${gsScriptName}" in
             # The server IP is only used to know the country of the SeedBox.
             # The IP address is not keeped on destination.
             gfnStatistics
+
+            #### Reset all logs in /var/log
+            gfnCleanVarLog
         fi
         ;;
 esac
@@ -159,20 +168,29 @@ esac
 
 #### 8 - Reboot after an install or an upgrade
 case "${gsScriptName}" in
-    MySB_GitHubRepoUpdate)
-        #### MD5 sum for ~/install/*
-        rm -f "${gsCheckSumFile}"
-        find "${MySB_InstallDir}"/install/ -type f | while read -r sFile; do
-            md5sum "${sFile}" >>"${gsCheckSumFile}"
-        done
-        find "${MySB_InstallDir}"/templates/ -type f | while read -r sFile; do
-            md5sum "${sFile}" >>"${gsCheckSumFile}"
-        done
-        ;;
+    # MySB_GitHubRepoUpdate)
+    #     #### MD5 sum for ~/install/*
+    #     rm -f "${gsCheckSumFile}"
+    #     find "${MySB_InstallDir}"/install/ -type f | while read -r sFile; do
+    #         md5sum "${sFile}" >>"${gsCheckSumFile}"
+    #     done
+    #     find "${MySB_InstallDir}"/templates/ -type f | while read -r sFile; do
+    #         md5sum "${sFile}" >>"${gsCheckSumFile}"
+    #     done
+    #     ;;
     MySB_UpgradeMe | MySB_Install.bsh)
         if [ "${REBOOT}" == "YES" ] && [ ! -f "${MySB_InstallDir}"/temp/continue ]; then
             #### Flush mail queue
             if gfnCheckCommand 0 postfix && gfnGetPid postfix; then postfix flush; fi
+
+            #### MD5 sum for ~/install/* & ~/templates/*
+            rm -f "${gsCheckSumFile}"
+            find "${MySB_InstallDir}"/install/ -type f | while read -r sFile; do
+                md5sum "${sFile}" >>"${gsCheckSumFile}"
+            done
+            find "${MySB_InstallDir}"/templates/ -type f | while read -r sFile; do
+                md5sum "${sFile}" >>"${gsCheckSumFile}"
+            done
 
             #### Update CA certificates
             update-ca-certificates --fresh &>/dev/null

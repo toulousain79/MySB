@@ -36,15 +36,16 @@ if [ "${USAGE}" == "ON" ]; then
                 gfnQuestionGetString NO "Contact email for Seedbox-Manager: " gsMainUserEmail "${gsMainUserEmail}"
             fi
 
-            cmdMySQL 'MySB_db' "UPDATE services SET to_install = '$(echo "${gbToInstall_Manager}" | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name='Seedbox-Manager';" -v
+            cmdMySQL 'MySB_db' "UPDATE services SET to_install='$(echo "${gbToInstall_Manager}" | sed 's/NO/0/g;' | sed 's/YES/1/g;')' WHERE serv_name='Seedbox-Manager';" -v
         fi
     fi
 fi
 
 if [ "${gbToInstall_Manager}" == "YES" ]; then
     #### NginX
-    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/nginx/etc.nginx.locations.seedbox-manager.conf.tmpl /etc/nginx/locations/Seedbox-Manager.conf
-    perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /etc/nginx/locations/Seedbox-Manager.conf
+    # shellcheck source=inc/funcs_by_script/funcs_Nginx
+    source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Nginx
+    gfnNginxSeedboxManager
 
     #### Seedbox-Manager
     gfnGetRepoValues 'Seedbox-Manager'
@@ -110,7 +111,7 @@ if [ "${gbToInstall_Manager}" == "YES" ]; then
     gfnManageDirAndFiles 'global'
 
     if gfnCheckCommand 0 "${gsManagerDir}"/reboot-rtorrent; then
-        cmdMySQL 'MySB_db' "UPDATE services SET to_install = '0', is_installed = '1' WHERE serv_name='Seedbox-Manager';" -v
+        cmdMySQL 'MySB_db' "UPDATE services SET to_install='0', is_installed='1' WHERE serv_name='Seedbox-Manager';" -v
     fi
 
     #### START services

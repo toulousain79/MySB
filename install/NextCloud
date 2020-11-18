@@ -33,6 +33,7 @@ if ! gfnCheckCommand 0 smbclient; then
 fi
 
 #### VARs
+# shellcheck source=.etc/MySB/config_db
 source /etc/MySB/config_db
 sDataDir="/home/nextcloud"
 gfnListCountUsers 'normal'
@@ -46,8 +47,10 @@ function fnCreateDatabase() {
         CREATE DATABASE IF NOT EXISTS NextCloud_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
         GRANT ALL ON NextCloud_db.* to 'MySB_user'@'localhost' IDENTIFIED BY '${MySQL_MysbPassword}';
         FLUSH PRIVILEGES;
-	EOF
+EOF
 }
+# shellcheck source=inc/funcs_by_script/funcs_MySB_CreateUser
+source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_MySB_CreateUser
 #### Functions - EoF
 
 #### STOP services
@@ -67,12 +70,11 @@ perl -pi -e "s/;opcache.memory_consumption=64/opcache.memory_consumption=128/g" 
 perl -pi -e "s/;opcache.save_comments=1/opcache.save_comments=1/g" "${gsPhpDir}"/fpm/php.ini
 perl -pi -e "s/;opcache.revalidate_freq=2/opcache.revalidate_freq=1/g" "${gsPhpDir}"/fpm/php.ini
 perl -pi -e "s/;opcache.revalidate_freq=2/opcache.revalidate_freq=1/g" "${gsPhpDir}"/fpm/php.ini
-#### ${gsPhpDir}/fpm/pool.d/www.conf
-perl -pi -e "s/^;env\[PATH\]/env\[PATH\]/g" "${gsPhpDir}"/fpm/pool.d/www.conf
 
 #### NginX configuration
-install -v -g root -o root -m 0600 "${MySB_InstallDir}"/templates/nginx/etc.nginx.locations.nextcloud.conf.tmpl /etc/nginx/locations/NextCloud.conf
-perl -pi -e "s/<MySB_InstallDir>/${gsInstallDirEscaped}/g" /etc/nginx/locations/NextCloud.conf
+# shellcheck source=inc/funcs_by_script/funcs_Nginx
+source "${MySB_InstallDir}"/inc/funcs_by_script/funcs_Nginx
+gfnNginxNextcloud
 
 #### START services
 gfnManageServices restart "${binPhpService} nginx"
@@ -113,16 +115,14 @@ fi
 [ ! -d "${sDataDir}" ] && mkdir -pv "${sDataDir}"
 [ ! -f /var/log/nextcloud.log ] && touch /var/log/nextcloud.log
 chown -v www-data:www-data /var/log/nextcloud.log
+chmod -v 0755 /var/log/nextcloud.log
 chown -R www-data:www-data "${sDataDir}"
+: >/var/log/nextcloud.log
 
 #### Clean some files and directories
 gfnDeleteDirectory 1 "${gsNextCloudDir}"/data
 gfnDeleteDirectory 1 "${gsNextCloudDir}"/assets
 rm -fv "${gsNextCloudDir}"/config/config.sample.php
-if [ -f "${sDataDir}"/nextcloud.log ]; then
-    cat "${sDataDir}"/nextcloud.log >>/var/log/nextcloud.log
-    rm -fv "${sDataDir}"/nextcloud.log*
-fi
 
 #### Create directories & change rights
 gfnManageDirAndFiles 'global'
@@ -135,8 +135,12 @@ if [[ (! -f "${gsNextCloudDir}"/config/config.php) || (! -s "${gsNextCloudDir}"/
     for ((i = 1; i <= nLoop; i++)); do
         echo "# First install ${i}/${nLoop}"
 
+        if [[ -d "${sDataDir}"/admin/ ]]; then
+            gfnDeleteDirectory 1 "${sDataDir}"/admin
+        fi
+
         # Do first install
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:install --database \"mysql\" --database-host \"localhost:/run/mysqld/mysqld.sock\" --database-name \"NextCloud_db\" --database-user \"MySB_user\" --database-pass \"${MySQL_MysbPassword}\" --admin-user \"admin\" --admin-email=\"${gsMainUserEmail}\" --admin-pass \"${MySQL_MysbPassword}\" --database-table-prefix \"nc_\" --data-dir \"${sDataDir}\" --no-interaction"
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:install --database \"mysql\" --database-host \"localhost:/run/mysqld/mysqld.sock\" --database-name \"NextCloud_db\" --database-user \"MySB_user\" --database-pass \"${MySQL_MysbPassword}\" --admin-user \"admin\" --admin-email=\"${gsMainUserEmail}\" --admin-pass \"${MySQL_MysbPassword}\" --data-dir \"${sDataDir}\" --no-interaction"
 
         # Check config.php
         sVersion="$(grep "'version'" "${gsNextCloudDir}"/config/config.php | tail -n 1 | cut -d "'" -f 4)"
@@ -145,7 +149,7 @@ if [[ (! -f "${gsNextCloudDir}"/config/config.php) || (! -s "${gsNextCloudDir}"/
         echo "sVersion: ${sVersion}"
         echo "sSecret: ${sSecret}"
         echo "sPasswordSalt: ${sPasswordSalt}"
-        if [ -z "${sVersion}" ] || [ -z "${sSecret}" ] || [ -z "${sPasswordSalt}" ]; then
+        if [[ -z "${sVersion}" ]] || [[ -z "${sSecret}" ]] || [[ -z "${sPasswordSalt}" ]]; then
             cmdMySQL 'MySB_db' "DROP DATABASE IF EXISTS NextCloud_db;" -v
             gfnDeleteDirectory 1 "${sDataDir}"/admin
             rm -fv "${gsNextCloudDir}"/config/config.php
@@ -169,7 +173,7 @@ if [[ (! -f "${gsNextCloudDir}"/config/config.php) || (! -s "${gsNextCloudDir}"/
     sVersion="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get version")"
     echo "sVersion: ${sVersion}"
     sInstanceId="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get instanceid")"
-    echo "sInstanceId: $sInstanceId"
+    echo "sInstanceId: ${sInstanceId}"
     sSecret="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get secret")"
     echo "sSecret: ${sSecret}"
     sPasswordSalt="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get passwordsalt")"
@@ -182,7 +186,6 @@ if [[ (! -f "${gsNextCloudDir}"/config/config.php) || (! -s "${gsNextCloudDir}"/
     # Set version
     perl -pi -e "s/<version>/${sVersion}/g" "${gsNextCloudDir}"/config/config.php
     # Set instance ID
-    # perl -pi -e "s/<instanceid>/${sInstanceId}/g" "${gsNextCloudDir}"/config/config.php
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set instanceid --value=${sInstanceId}"
     # Set secret
     # perl -pi -e "s/<secret>/${sSecret}/g" "${gsNextCloudDir}"/config/config.php
@@ -195,19 +198,139 @@ if [[ (! -f "${gsNextCloudDir}"/config/config.php) || (! -s "${gsNextCloudDir}"/
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set trusted_domains 0 --value=127.0.0.1"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set trusted_domains 1 --value=localhost"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set trusted_domains 2 --value=${gsHostNameFqdn}:${gsPort_MySB_HTTPS}"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set datadirectory --value=${sDataDir}"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set default_language --value=${EnvLang}"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set force_language --type boolean --value=false"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set default_locale --value=${gsLocale}"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set force_locale --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set defaultapp --value=files"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set knowledgebaseenabled --type boolean --value=true"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set allow_user_to_change_display_name --type boolean --value=true"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set remember_login_cookie_lifetime --type integer --value=1296000"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set session_lifetime --type integer --value=86400"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set session_keepalive --type boolean --value=true"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set auto_logout --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set token_auth_enforced --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set auth.bruteforce.protection.enabled --type boolean --value=true"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set auth.webauthn.enabled --type boolean --value=true"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set skeletondirectory --value="
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set lost_password_link --value="
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mail_domain --value=${sMailDomain}"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mail_from_address --value=${sMailFromAddress}"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mail_smtpdebug --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mail_smtpmode --value=smtp"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mail_smtphost --value=127.0.0.1"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mail_smtpport --type integer --value=25"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mail_smtptimeout --type integer --value=10"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mail_smtpsecure --value="
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mail_smtpauth --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mail_smtpauthtype --value=LOGIN"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mail_smtpname --value="
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mail_smtppassword --value="
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mail_template_class --value=\\\OC\\\Mail\\\EMailTemplate"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mail_send_plaintext_only --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:delete mail_smtpstreamoptions"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mail_sendmailmode --value=smtp"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set overwritehost --value=${gsHostNameFqdn}:${gsPort_MySB_HTTPS}"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set overwriteprotocol --value=https"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set overwritewebroot --value=/nc"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set overwritecondaddr --value="
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set overwrite.cli.url --value=https://localhost:${gsPort_MySB_HTTPS}/nc"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set htaccess.RewriteBase --value=/nc"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set htaccess.IgnoreFrontController --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set proxy --value="
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set proxyuserpwd --value="
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:delete proxyexclude"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set allow_local_remote_servers --type boolean --value=true"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set trashbin_retention_obligation --value=15,30"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set versions_retention_obligation --value=auto,30"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set appcodechecker --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set updatechecker --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set updater.server.url --value=https://updates.nextcloud.com/updater_server/"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set updater.release.channel --value=stable"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set has_internet_connection --type boolean --value=true"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set connectivity_check_domains 0 --value=www.nextcloud.com"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set connectivity_check_domains 1 --value=www.startpage.com"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set connectivity_check_domains 2 --value=www.eff.org"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set connectivity_check_domains 3 --value=www.edri.org"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set check_for_working_wellknown_setup --type boolean --value=true"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set check_for_working_htaccess --type boolean --value=true"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set check_data_directory_permissions --type boolean --value=true"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set config_is_read_only --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set log_type --value=file"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set logfile --value=/var/log/nextcloud.log"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set logfilemode --type integer --value=0740"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set loglevel --value=2"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set syslog_tag --value=Nextcloud"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set logdateformat --value='F d, Y H:i:s'"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set logtimezone --value=${gsTimeZone}"
-    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set skeletondirectory --value="
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set log_query --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set session_lifetime --type integer --value=86400"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set log_rotate_size --type integer --value=104857600"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set customclient_desktop --value=https://nextcloud.com/install/#install-clients"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set customclient_android --value=https://play.google.com/store/apps/details?id=com.nextcloud.client"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set customclient_ios --value=https://itunes.apple.com/us/app/nextcloud/id1125420102?mt=8"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set customclient_ios_appid --value=1125420102"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set appstoreenabled --type boolean --value=true"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set enable_previews --type boolean --value=true"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set preview_max_x --type integer --value=4096"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set preview_max_y --type integer --value=4096"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set preview_max_filesize_image --type integer --value=50"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set preview_libreoffice_path --value="
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set preview_office_cl_parameters --value="
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set ldapUserCleanupInterval --type integer --value=51"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set sort_groups_by_name --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set redis host --value=/var/run/redis/redis-server.sock"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set redis port --type integer --value=0"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set redis timeout --type integer --value=1.5"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set redis password --value="
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set redis dbindex --type integer --value=0"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set comments.managerFactory --type string --value=\\\OC\\\Comments\\\ManagerFactory"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set systemtags.managerFactory --value=\\\OC\\\SystemTag\\\ManagerFactory"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set openssl config --value=/etc/ssl/openssl.cnf"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set memcache.local --type string --value=\\\OC\\\Memcache\\\Redis"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set memcache.distributed --type string --value=\\\OC\\\Memcache\\\Redis"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:delete cache_path"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set cache_chunk_gc_ttl --type integer --value=86400"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set sharing.managerFactory --type string --value=\\\OC\\\Share20\\\ProviderFactory"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set sharing.maxAutocompleteResults --type integer --value=0"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set sharing.minSearchStringLength --type integer --value=0"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set sharing.enable_share_accept --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set sharing.force_share_accept --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set sharing.enable_share_mail --type boolean --value=true"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mysql.utf8mb4 --type boolean --value=true"
-    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set token_auth_enforced --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set supportedDatabases 0 --value=mysql"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set tempdirectory --value=/tmp"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set hashing_default_password --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set hashingCost --type integer --value=10"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set blacklisted_files 0 --value=.htaccess"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set share_folder --value=/"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set cipher --value=AES-256-CFB"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set minimum.supported.desktop.version --value=2.0.0"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set quota_include_external_storage --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set external_storage.auth_availability_delay --type integer --value=1800"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set filesystem_check_changes --type boolean --value=true"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set part_file_in_storage --type boolean --value=true"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set mount_file --value=${sDataDir}/mount.json"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set filesystem_cache_readonly --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set forwarded_for_headers 0 --value=HTTP_FORWARDED_FOR"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set forwarded_for_headers 0 --value=HTTP_X_FORWARDED"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set max_filesize_animated_gifs_public_sharing --type integer --value=10"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set filelocking.enabled --type boolean --value=true"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set filelocking.ttl --type integer --value=3600"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set memcache.locking --type string --value=\\\OC\\\Memcache\\\Redis"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set filelocking.debug --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set upgrade.disable-web --type boolean --value=true"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set debug --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set data-fingerprint --value="
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set copied_sample_config --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set lookup_server --value=https://lookup.nextcloud.com"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set gs.enabled --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set gs.federation --value=internal"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set csrf.optout 0 --value=/^WebDAVFS/"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set csrf.optout 0 --value=/^Microsoft-WebDAV-MiniRedir/"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set simpleSignUpLink.shown --type boolean --value=false"
+    su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:set login_form_autocomplete --type boolean --value=true"
 fi
 
 # Maybe it's an upgrade ?
@@ -238,11 +361,12 @@ su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:app:set --u
 
 # Users group
 if (! grep -q 'mysb_users' <<<"$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ group:list")"); then
-    echo && echo "# roup:add"
+    echo && echo "# group:add"
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ group:add mysb_users"
 fi
 
 echo && echo "# configure"
+su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ db:add-missing-columns"
 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ db:add-missing-indices"
 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ db:convert-filecache-bigint --no-interaction"
 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ background:cron"
@@ -251,8 +375,16 @@ su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:cleanup"
 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ upgrade -v"
 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ maintenance:repair"
 
-#### Clean actual external mounts (MySB_Home)
-for nId in $(cmdMySQL 'NextCloud_db' "SELECT mount_id FROM nc_external_mounts WHERE mount_point='/MySB_Home';"); do
+#### PATCHs
+sVersion="$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ config:system:get version")"
+case "${sVersion}" in
+    '20.0.1.1')
+        install -v -g www-data -o www-data -m 0640 "${MySB_InstallDir}"/templates/nextcloud/patch.20.0.1.1.OC_Helper.php.tmpl "${gsNextCloudDir}"/lib/private/legacy/OC_Helper.php
+        ;;
+esac
+
+#### Clean oldest external mounts
+for nId in $(cmdMySQL 'NextCloud_db' "SELECT mount_id FROM oc_external_mounts WHERE mount_point='/MySB_Home';"); do
     su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:delete ${nId} --yes"
 done
 
@@ -261,13 +393,11 @@ for seedUser in ${gsUsersList}; do
     if (getent passwd "${seedUser}" >/dev/null); then
         FnUserMail="$(cmdMySQL 'MySB_db' "SELECT users_email FROM users WHERE users_ident='${seedUser}';")"
 
-        if [ ! -d "${sDataDir}"/"${seedUser}" ]; then
-            mkdir -v "${sDataDir}"/"${seedUser}"
-            chown -v www-data:www-data "${sDataDir}"/"${seedUser}"
-            chmod -v 0755 "${sDataDir}"/"${seedUser}"
-        fi
-
         if (! su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:info \"${seedUser}\"" >/dev/null); then
+            if [[ -d "${sDataDir}"/"${seedUser}" ]]; then
+                gfnDeleteDirectory 1 "${sDataDir}"/"${seedUser}"
+            fi
+
             OC_PASS="$(cmdMySQL 'MySB_db' "SELECT users_passwd FROM users WHERE users_ident='${seedUser}';")"
             [ -z "${OC_PASS}" ] && OC_PASS="$(gfnGenPassword 8)"
             export OC_PASS
@@ -275,25 +405,18 @@ for seedUser in ${gsUsersList}; do
             cmdMySQL 'MySB_db' "UPDATE users SET init_password = '1' WHERE users_ident='${seedUser}';" -v
         fi
 
+        if [[ ! -d "${sDataDir}"/"${seedUser}" ]]; then
+            mkdir -v "${sDataDir}"/"${seedUser}"
+            chown -v www-data:www-data "${sDataDir}"/"${seedUser}"
+            chmod -v 0755 "${sDataDir}"/"${seedUser}"
+        fi
+
         su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${seedUser}\" settings email \"${FnUserMail}\""
         su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${seedUser}\" core lang \"${EnvLang}\""
         su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ user:setting \"${seedUser}\" core timezone ${gsTimeZone}"
 
-        #### Create new external mount (MySB_Home)
-        IdStorage=$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:create MySB_Home local null::null" | awk '{ print $5 }')
-        if [ -n "${IdStorage}" ]; then
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:applicable --add-user \"${seedUser}\" ${IdStorage}"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:config ${IdStorage} datadir '/home/${seedUser}/'"
-            # su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} filesystem_check_changes 'false'"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encrypt 'false'"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} previews 'true'"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} enable_sharing 'true'"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:option ${IdStorage} encoding_compatibility 'false'"
-            su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:verify ${IdStorage}"
-        fi
-
-        #### Force a scan
-        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:scan --path=\"/${seedUser}/files/MySB_Home\""
+        #### Create new external mounts
+        gfnNextCloudExternalMounts "${seedUser}"
     fi
 
     unset IdStorage FnUserMail OC_PASS
@@ -317,7 +440,7 @@ if [ "${gbToInstall_Fail2Ban}" == "YES" ] || [ "${gbIsInstalled_Fail2Ban}" == "Y
     fi
 fi
 
-#### Scann all files
+#### Scan all files
 screen -dmS NextCloud_ScanAll su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files:scan --all"
 
 su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ integrity:check-core" >/tmp/nextcloud_check_integrity.log
@@ -361,8 +484,12 @@ crontab -u www-data /tmp/crontab.tmp
 rm -f /tmp/crontab.tmp
 su -s /bin/sh www-data -c "/usr/bin/php -f ${gsNextCloudDir}/cron.php >/dev/null 2>&1"
 
+#### Cleaning
+rm -fv "${sDataDir}"/nextcloud.log*
+rm -fv "${gsNextCloudDir}"/config/CAN_INSTALL
+
 #### CLean passwords from log file
-[ -f "${gsLogFile}" ] && sed -i "s/${MySQL_MysbPassword}/****************/g;" "${gsLogFile}"
+[[ -f "${gsLogFile}" ]] && sed -i "s/${MySQL_MysbPassword}/****************/g;" "${gsLogFile}"
 
 # -----------------------------------------
 # shellcheck source=inc/includes_after

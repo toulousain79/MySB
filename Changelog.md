@@ -1,5 +1,22 @@
 # Changelog
 
+## v7.3 - 2020/11/18 _(started at: 2020/11/09)_
+
+- rtorrent init script review #110
+- fix ip add #116
+- fix torrent loading #120
+- fix broken install #119
+- Redis, use of unix socket for nextcloud
+- NextCloud v20.0.1
+- NetData v1.26.0
+- GeoIPupdate v4.5.0
+- Medoo v1.7.10
+- Composer v2.0.7
+- Goofys v0.24.0
+- ruTorrent v3.10 _(48bf3e5)_
+- Lynis v3.0.1 _(work in progress)_
+- CTop v0.7.5
+
 ## v7.2 - 2020/01/26 _(started at: 2019/10/03)_
 
 - NextCloud v18.0.0
