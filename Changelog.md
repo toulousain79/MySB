@@ -6,7 +6,12 @@
 - fix ip add #116
 - fix torrent loading #120
 - fix broken install #119
-- Redis, use of unix socket for nextcloud
+- Redis
+  - use of unix socket for nextcloud
+  - disable Transparent Huge Pages (THP) during install for the first start
+- fix DNScrypt systemd error during install
+- fix MySQL error about a missing value afer questions
+- purge cryptsetup-initramfs package to avoid cryptsetup WARNING message on boot
 - NextCloud v20.0.1
 - NetData v1.26.0
 - GeoIPupdate v4.5.0

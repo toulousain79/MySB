@@ -44,6 +44,14 @@ if [ "${USAGE}" == "ON" ]; then
     fi
 fi
 
+function fnSystemD() {
+    # Systemd
+    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/dnscrypt-proxy.service.tmpl /lib/systemd/system/dnscrypt-proxy.service
+    perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /lib/systemd/system/dnscrypt-proxy.service
+    systemctl daemon-reload
+    systemctl disable dnscrypt-proxy.service
+}
+
 function fnDownloadDnscrypt() {
     #### Download archive
     # Loading repository informations
@@ -69,8 +77,12 @@ function fnDownloadDnscrypt() {
         if [ -f "${gsRepoDir}/dnscrypt-proxy" ]; then
             cp -v "${gsRepoDir}/dnscrypt-proxy" /usr/local/bin/dnscrypt-proxy
             chmod -v +x /usr/local/bin/dnscrypt-proxy
+            echo -n "DNScrypt-proxy version: "
             /usr/local/bin/dnscrypt-proxy --version
         fi
+
+        # Systemd
+        fnSystemD
 
         # Start service
         gfnManageServices start "dnscrypt-proxy"
@@ -109,12 +121,6 @@ if [ "${gbToInstall_DNScrypt}" == "YES" ]; then
     install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/ip-blacklist.txt.tmpl /etc/dnscrypt-proxy/ip-blacklist.txt
     install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/cloaking-rules.txt.tmpl /etc/dnscrypt-proxy/cloaking-rules.txt
     install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/forwarding-rules.txt.tmpl /etc/dnscrypt-proxy/forwarding-rules.txt
-
-    # Systemd
-    install -v -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/dnscrypt-proxy.service.tmpl /lib/systemd/system/dnscrypt-proxy.service
-    perl -pi -e "s/<InstallDir>/${gsInstallDirEscaped}/g" /lib/systemd/system/dnscrypt-proxy.service
-    systemctl daemon-reload
-    systemctl disable dnscrypt-proxy.service
 
     # Resore DB config
     gfnDnscryptProxyConfig
