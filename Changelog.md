@@ -1,6 +1,6 @@
 # Changelog
 
-## v7.3 - xxxx/xx/xx _(started at: 2020/11/09)_
+## v7.3 - 2020/11/18 _(started at: 2020/11/09)_
 
 - rtorrent init script review #110
 - fix ip add #116
