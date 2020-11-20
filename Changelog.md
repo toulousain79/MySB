@@ -12,6 +12,10 @@
 - fix DNScrypt systemd error during install
 - fix MySQL error about a missing value afer questions
 - purge cryptsetup-initramfs package to avoid cryptsetup WARNING message on boot
+- Fail2Ban
+  - add missing sshd-ddos.conf
+  - replace Nextcloud filter
+  - remove use of BadIps
 - NextCloud v20.0.1
 - NetData v1.26.0
 - GeoIPupdate v4.5.0
