@@ -156,6 +156,41 @@ if grep -q 'ip6_tables' < <(lsmod); then
     fi
 fi
 
+#### SSH
+if (grep -q 'UsePrivilegeSeparation' /etc/ssh/sshd_config); then
+    sed -i '/UsePrivilegeSeparation /d' /etc/ssh/sshd_config
+    gfnManageServices restart "ssh"
+fi
+
+#### Fail2Ban
+bRestart=0
+if (grep -q 'badips' /etc/fail2ban/jail.local); then
+    bRestart=1
+fi
+if [[ ! -f /etc/fail2ban/filter.d/sshd-ddos.conf ]]; then
+    install -v -g root -o root -m 0664 "${MySB_InstallDir}"/templates/fail2ban/etc.fail2ban.filter.d.sshd-ddos.conf.tmpl /etc/fail2ban/filter.d/sshd-ddos.conf
+    bRestart=1
+fi
+if [[ ! -f /etc/fail2ban/filter.d/nginx-badbots.conf ]]; then
+    install -v -g root -o root -m 0664 "${MySB_InstallDir}"/templates/fail2ban/etc.fail2ban.filter.d.nginx-badbots.conf.tmpl /etc/fail2ban/filter.d/nginx-badbots.conf
+    bRestart=1
+fi
+if [[ "${gbIsInstalled_NextCloud}" == "YES" ]] && [[ -d "${gsNextCloudDir}" ]]; then
+    bReplace=0
+    if [[ -f /etc/fail2ban/filter.d/nextcloud.conf ]] && (grep -q 'AykutCevik' /etc/ssh/sshd_config); then
+        bReplace=1
+    elif [[ ! -f /etc/fail2ban/filter.d/nextcloud.conf ]]; then
+        bReplace=1
+    fi
+    if [[ ${bReplace} -eq 1 ]]; then
+        install -v -g root -o root -m 0664 "${MySB_InstallDir}"/templates/fail2ban/etc.fail2ban.filter.d.nextcloud.tmpl /etc/fail2ban/filter.d/nextcloud.conf
+        bRestart=1
+    fi
+fi
+if [[ ${bRestart} -eq 1 ]]; then
+    gfnScriptInvoke 'source' "${MySB_InstallDir}/bin/MySB_SecurityRules" 'create' "${gsSwitch}"
+fi
+
 # -----------------------------------------
 # shellcheck source=inc/includes_after
 . "$(dirname "$0")"/../inc/includes_after
