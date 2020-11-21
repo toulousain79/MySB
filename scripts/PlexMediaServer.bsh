@@ -1,5 +1,8 @@
 #!/bin/bash
 # ----------------------------------
+# shellcheck source=inc/includes_before
+source "$(dirname "$0")"/../inc/includes_before
+# ----------------------------------
 #  __/\\\\____________/\\\\___________________/\\\\\\\\\\\____/\\\\\\\\\\\\\___
 #   _\/\\\\\\________/\\\\\\_________________/\\\/////////\\\_\/\\\/////////\\\_
 #	_\/\\\//\\\____/\\\//\\\____/\\\__/\\\__\//\\\______\///__\/\\\_______\/\\\_
@@ -22,24 +25,44 @@
 #
 ##################### FIRST LINE #####################################
 
-# Plex Media Server
-gsPlexPreferencesRev='rev 1.1'
-export gsPlexPreferencesRev
+if [[ "${gbIsInstalled_PlexMedia}" == "YES" ]]; then
+    case "${1}" in
+        'status')
+            bPlexCheckConfig=0
+            sPreferencesFile='/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml'
+            sPreferencesRev="${sPreferencesFile//Preferences.xml/Preferences.rev}"
 
-# System
-gsSystemCron='rev 1.0'
-export gsSystemCron
+            if [[ -f "${sPreferencesFile}" ]]; then
+                if (grep -q "AcceptedEULA" "${sPreferencesFile}"); then
+                    if [[ -f "${sPreferencesRev}" ]]; then
+                        (! grep -q "${gsPlexPreferencesRev}" "${sPreferencesRev}") && bPlexCheckConfig=1
+                    else
+                        bPlexCheckConfig=1
+                    fi
+                fi
+            fi
 
-# rTorrent
-gsRtorrentInit='rev 2.2'
-gsRtorrentRc='rev 1.2'
-gsRtorrentScriptErased='rev 1.0'
-gsRtorrentScriptFinished='rev 1.0'
-gsRtorrentScriptInotify='rev 1.0'
-gsRtorrentScriptInsertedNew='rev 1.1'
-gsRtorrentScriptTasks='rev 1.2'
-gsRtorrentScriptSynchro='rev 1.1'
-export gsRtorrentInit gsRtorrentRc gsRtorrentScriptErased gsRtorrentScriptFinished
-export gsRtorrentScriptInotify gsRtorrentScriptInsertedNew gsRtorrentScriptTasks gsRtorrentScriptSynchro
+            if [[ ${bPlexCheckConfig} -eq 1 ]]; then
+                # shellcheck source=install/PlexMedia
+                . "${MySB_InstallDir}"/install/PlexMedia
+                systemctl stop plexmediaserver
+                fnGeneratePreferencesXml
+                systemctl start plexmediaserver
+            fi
 
+            # PlexMediaServer
+            systemctl status plexmediaserver >/dev/null || systemctl restart plexmediaserver
+
+            if systemctl status plexmediaserver >/dev/null; then
+                # Tautulli
+                systemctl status tautulli >/dev/null || systemctl restart tautulli
+            fi
+            ;;
+    esac
+fi
+
+# -----------------------------------------
+# shellcheck source=inc/includes_after
+source "$(dirname "$0")"/../inc/includes_after
+# -----------------------------------------
 ##################### LAST LINE ######################################
