@@ -16,6 +16,9 @@
   - add missing sshd-ddos.conf
   - replace Nextcloud filter
   - remove use of BadIps
+- Plex
+  - add scheduled script for check status
+  - generate Preferences.xml only after the Plex user configuration #111
 - NextCloud v20.0.1
 - NetData v1.26.0
 - GeoIPupdate v4.5.0
