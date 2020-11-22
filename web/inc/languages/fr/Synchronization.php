@@ -72,7 +72,7 @@ define('User_Synchronization_StartPlanned', 'Lancer une synchronisation planifi&
 define('User_Synchronization_ScriptsDirect', 'Script &agrave; utiliser pour les synchronisations directes');
 define('User_Synchronization_ScriptsCron', 'Planification pour les synchronisations programm&eacute;es');
 define('User_Synchronization_ScriptsComment', 'Dans le cas o&ugrave; plusieurs scripts sont pr&eacute;sents,<br />s&eacute;lectionnez celui &agrave; utiliser pour une synchronisation directe.<br />Vos scripts doivent &ecirc;tre enregistr&eacute;s dans ~/scripts/ avec ".sh" comme extension.');
-define('User_Synchronization_Title_DownloadedFiles', 'Remettre un t&eacute;l&eacute;chargement dans la liste d\'attente');
+define('User_Synchronization_Title_DownloadedFiles', '<b>Remettre un t&eacute;l&eacute;chargement dans la liste d\'attente</b>');
 define('User_Synchronization_Files', 'Liste des t&eacute;l&eacute;chargements');
 define('User_Synchronization_AddFiles', 'Ajouter &agrave; la liste');
 define('User_Synchronization_AddFilesComment', 'Permet de remettre un t&eacute;l&eacute;chargement dans la liste des synchronisations.');
