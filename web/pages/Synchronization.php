@@ -22,6 +22,11 @@
 //
 //#################### FIRST LINE #####################################
 
+// Sync Mode for finished download
+// 0	-->	Do not start any script (no synchro)
+// 1	-->	Execute scripts by crontab
+// 2	-->	Execute scripts directly when a download is finished
+
 global $MySB_DB, $CurrentUser;
 require_once(WEB_INC . '/languages/' . $_SESSION['Language'] . '/' . basename(__FILE__));
 
@@ -150,7 +155,7 @@ if (isset($_POST['submit'])) {
 			// Script name for direct synchro
 			if ( isset($_POST['script_name']) ) {
 				$ScriptName = $_POST['script_name'];
-				$IfExist = $MySB_DB->get("users_scripts", "id_users_scripts", ["AND" => ["id_users" => $UserID,"sync_mode" => "direct"]]);
+				$IfExist = $MySB_DB->get("users_scripts", "id_users_scripts", ["AND" => ["id_users" => $UserID, "sync_mode" => "direct"]]);
 
 				if ( empty($IfExist) ) {
 					$MySB_DB->insert("users_scripts", ["id_users" => "$UserID", "sync_mode" => "direct", "script" => "$ScriptName"]);
@@ -334,27 +339,31 @@ if($dir = opendir("/home/$CurrentUser/scripts")) {
 
 <form class="form_settings" method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>">
 
-<div class="tooltip_templates">
-    <span id="tooltip_content">
-        <?php echo User_Synchronization_TT_Documentation; ?>
-    </span>
-</div>
+    <div class="tooltip_templates">
+        <span id="tooltip_content">
+            <?php echo User_Synchronization_TT_Documentation; ?>
+        </span>
+    </div>
 
-<div align="center" style="margin-top: 10px; margin-bottom: 20px;">
-	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
-	<br />
-	<fieldset style="vertical-align: text-top;">
-	<legend><?php echo User_Synchronization_Title_rTorrentConfig; ?>&nbsp;<img class="tooltip" data-tooltip-content="#tooltip_content" style="cursor: help; vertical-align:middle; width:20px; height:20px;" alt="" border="0" src="<?php echo THEMES_PATH . 'MySB/images/help.png'; ?>"></legend>
-<?php
+    <div align="center" style="margin-top: 10px; margin-bottom: 20px;">
+        <input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;"
+            name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
+        <br />
+        <fieldset style="vertical-align: text-top;">
+            <legend><?php echo User_Synchronization_Title_rTorrentConfig; ?>&nbsp;<img class="tooltip"
+                    data-tooltip-content="#tooltip_content"
+                    style="cursor: help; vertical-align:middle; width:20px; height:20px;" alt="" border="0"
+                    src="<?php echo THEMES_PATH . 'MySB/images/help.png'; ?>"></legend>
+            <?php
 if ( !empty($users_directories) ) {
 ?>
-		<table>
-			<tr>
-				<th style="text-align:center;"><?php echo User_Synchronization_rTorrentConfig_Table_Title; ?></th>
-				<th style="text-align:center;"><?php echo User_Synchronization_Title_SyncMode; ?></th>
-				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
-			</tr>
-<?php
+            <table>
+                <tr>
+                    <th style="text-align:center;"><?php echo User_Synchronization_rTorrentConfig_Table_Title; ?></th>
+                    <th style="text-align:center;"><?php echo User_Synchronization_Title_SyncMode; ?></th>
+                    <th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
+                </tr>
+                <?php
 	$DisplayIdent=0;
 	$DisplayDirect=0;
 	$DisplayCron=0;
@@ -387,53 +396,64 @@ if ( !empty($users_directories) ) {
 				break;
 		}
 ?>
-			<tr>
-				<td><?php echo $Directory['sub_directory']; ?><input class="directory" id="directory" name="directory[]" type="hidden" value="<?php echo $Directory['sub_directory']; ?>" /></td>
-				<td>
-					<?php echo $sync_mode; ?>
-				</td>
-				<td>
-					<input class="submit" name="delete_dir[]" type="checkbox" value="<?php echo $Directory['sub_directory']; ?>" <?php echo ($Directory['to_delete'] == '1') ? 'checked' : ''; ?> />
-				</td>
-			</tr>
-<?php
+                <tr>
+                    <td><?php echo $Directory['sub_directory']; ?><input class="directory" id="directory"
+                            name="directory[]" type="hidden" value="<?php echo $Directory['sub_directory']; ?>" /></td>
+                    <td>
+                        <?php echo $sync_mode; ?>
+                    </td>
+                    <td>
+                        <input class="submit" name="delete_dir[]" type="checkbox"
+                            value="<?php echo $Directory['sub_directory']; ?>"
+                            <?php echo ($Directory['to_delete'] == '1') ? 'checked' : ''; ?> />
+                    </td>
+                </tr>
+                <?php
 	}
 }
 ?>
-			<tr><th colspan="3"></th></tr>
-		</table>
-		<div id="input1" class="clonedInput">
-			<input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
-			<?php echo User_Synchronization_rTorrentConfigDirectory; ?>&nbsp;<input class="input_directory" id="input_directory" name="input_directory[1]" type="text" />
-			<select class="input_sync_mode" id="input_sync_mode" name="input_sync_mode[1]" style="width:280px; height: 28px;" >
-				<option value="0"><?php echo User_Synchronization_IgnoreSync; ?></option>
-				<option value="1"><?php echo User_Synchronization_CronOnly; ?></option>
-				<option value="2"><?php echo User_Synchronization_DirectSync; ?></option>
-			</select>
-		</div>
-		<div style="margin-top: 10px; margin-bottom: 20px;">
-			<input type="button" id="btnAdd" value="<?php echo User_Synchronization_rTorrentConfigAddDirectory; ?>" style="cursor: pointer;" />
-			<input type="button" id="btnDel" value="<?php echo User_Synchronization_rTorrentConfigDelDirectory; ?>" style="cursor: pointer;" />
-		</div>
-		<div align="center"><p class="Comments"><?php echo User_Synchronization_rTorrentConfig_Comment; ?></p></div>
-	</fieldset>
+                <tr>
+                    <th colspan="3"></th>
+                </tr>
+            </table>
+            <div id="input1" class="clonedInput">
+                <input class="input_id" id="input_id" name="input_id[1]" type="hidden" value="1" />
+                <?php echo User_Synchronization_rTorrentConfigDirectory; ?>&nbsp;<input class="input_directory"
+                    id="input_directory" name="input_directory[1]" type="text" />
+                <select class="input_sync_mode" id="input_sync_mode" name="input_sync_mode[1]"
+                    style="width:280px; height: 28px;">
+                    <option value="0"><?php echo User_Synchronization_IgnoreSync; ?></option>
+                    <option value="1"><?php echo User_Synchronization_CronOnly; ?></option>
+                    <option value="2"><?php echo User_Synchronization_DirectSync; ?></option>
+                </select>
+            </div>
+            <div style="margin-top: 10px; margin-bottom: 20px;">
+                <input type="button" id="btnAdd" value="<?php echo User_Synchronization_rTorrentConfigAddDirectory; ?>"
+                    style="cursor: pointer;" />
+                <input type="button" id="btnDel" value="<?php echo User_Synchronization_rTorrentConfigDelDirectory; ?>"
+                    style="cursor: pointer;" />
+            </div>
+            <div align="center">
+                <p class="Comments"><?php echo User_Synchronization_rTorrentConfig_Comment; ?></p>
+            </div>
+        </fieldset>
 
-<?php
+        <?php
 if ( $DisplayIdent >= 1 ) {
 ?>
-	<fieldset style="vertical-align: text-top;">
-	<legend><?php echo User_Synchronization_Title_Scripts; ?></legend>
-<?php
+        <fieldset style="vertical-align: text-top;">
+            <legend><?php echo User_Synchronization_Title_Scripts; ?></legend>
+            <?php
 	if ( $DisplayDirect >= 1 ) {
 ?>
-		<table>
-			<tr>
-				<th style="text-align:center;"><?php echo User_Synchronization_ScriptsDirect; ?></th>
-			</tr>
-			<tr>
-				<td>
-					<select name="script_name" style="width:100%; height: 28px;">
-<?php
+            <table>
+                <tr>
+                    <th style="text-align:center;"><?php echo User_Synchronization_ScriptsDirect; ?></th>
+                </tr>
+                <tr>
+                    <td>
+                        <select name="script_name" style="width:100%; height: 28px;">
+                            <?php
 				foreach($CronFiles as $Script) {
 					if ( $users_scripts['script'] == $Script ) {
 						echo '<option selected="selected" value="' . $Script . '">' . $Script . '</option>';
@@ -442,12 +462,14 @@ if ( $DisplayIdent >= 1 ) {
 					}
 				}
 ?>
-					</select>
-				</td>
-			</tr>
-		</table>
-		<div align="center"><p class="Comments"><?php echo User_Synchronization_ScriptsComment; ?></p></div>
-<?php
+                        </select>
+                    </td>
+                </tr>
+            </table>
+            <div align="center">
+                <p class="Comments"><?php echo User_Synchronization_ScriptsComment; ?></p>
+            </div>
+            <?php
 	}
 	if ( ($DisplayDirect >= 1) && ($DisplayCron >= 1) ) {
 		echo '<br />';
@@ -455,35 +477,45 @@ if ( $DisplayIdent >= 1 ) {
 
 	if ( $DisplayCron >= 1 ) {
 ?>
-		<table>
-			<tr>
-				<th colspan="6" style="text-align:center;"><?php echo User_Synchronization_ScriptsCron; ?></th>
-			</tr>
-			<tr>
-				<th style="text-align:center;"><?php echo User_Synchronization_Minutes; ?></th>
-				<th style="text-align:center;"><?php echo User_Synchronization_Hours; ?></th>
-				<th style="text-align:center;"><?php echo User_Synchronization_Days; ?></th>
-				<th style="text-align:center;"><?php echo User_Synchronization_Months; ?></th>
-				<th style="text-align:center;"><?php echo User_Synchronization_NumDay; ?></th>
-				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
-			</tr>
-<?php
+            <table>
+                <tr>
+                    <th colspan="6" style="text-align:center;"><?php echo User_Synchronization_ScriptsCron; ?></th>
+                </tr>
+                <tr>
+                    <th style="text-align:center;"><?php echo User_Synchronization_Minutes; ?></th>
+                    <th style="text-align:center;"><?php echo User_Synchronization_Hours; ?></th>
+                    <th style="text-align:center;"><?php echo User_Synchronization_Days; ?></th>
+                    <th style="text-align:center;"><?php echo User_Synchronization_Months; ?></th>
+                    <th style="text-align:center;"><?php echo User_Synchronization_NumDay; ?></th>
+                    <th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
+                </tr>
+                <?php
 	foreach($users_crontab as $Crontab) {
 ?>
-			<input name="cron_id[<?php echo $Crontab['id_users_crontab']; ?>]" type="hidden" value="<?php echo $Crontab['id_users_crontab']; ?>" />
-			<tr>
-				<td><input class="text_small" name="cron_minutes[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['minutes']; ?>" readonly /></td>
-				<td><input class="text_small" name="cron_hours[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['hours']; ?>" readonly /></td>
-				<td><input class="text_small" name="cron_days[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['days']; ?>" readonly /></td>
-				<td><input class="text_small" name="cron_months[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['months']; ?>" readonly /></td>
-				<td><input class="text_small" name="cron_numday[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['numday']; ?>" readonly /></td>
-				<td rowspan="2"><input class="submit" name="cron_delete[<?php echo $Crontab['id_users_crontab']; ?>]" type="checkbox" value="<?php echo $Crontab['id_users_crontab']; ?>" readonly /></td>
-			</tr>
-			<tr>
-				<td style="text-align:center;"><?php echo User_Synchronization_Command; ?></th>
-				<td colspan="4"><input style="width: 100%;" name="cron_command[<?php echo $Crontab['id_users_crontab']; ?>]" type="text" value="<?php echo $Crontab['command']; ?>" readonly /></td>
-			</tr>
-<?php
+                <input name="cron_id[<?php echo $Crontab['id_users_crontab']; ?>]" type="hidden"
+                    value="<?php echo $Crontab['id_users_crontab']; ?>" />
+                <tr>
+                    <td><input class="text_small" name="cron_minutes[<?php echo $Crontab['id_users_crontab']; ?>]"
+                            type="text" value="<?php echo $Crontab['minutes']; ?>" readonly /></td>
+                    <td><input class="text_small" name="cron_hours[<?php echo $Crontab['id_users_crontab']; ?>]"
+                            type="text" value="<?php echo $Crontab['hours']; ?>" readonly /></td>
+                    <td><input class="text_small" name="cron_days[<?php echo $Crontab['id_users_crontab']; ?>]"
+                            type="text" value="<?php echo $Crontab['days']; ?>" readonly /></td>
+                    <td><input class="text_small" name="cron_months[<?php echo $Crontab['id_users_crontab']; ?>]"
+                            type="text" value="<?php echo $Crontab['months']; ?>" readonly /></td>
+                    <td><input class="text_small" name="cron_numday[<?php echo $Crontab['id_users_crontab']; ?>]"
+                            type="text" value="<?php echo $Crontab['numday']; ?>" readonly /></td>
+                    <td rowspan="2"><input class="submit"
+                            name="cron_delete[<?php echo $Crontab['id_users_crontab']; ?>]" type="checkbox"
+                            value="<?php echo $Crontab['id_users_crontab']; ?>" readonly /></td>
+                </tr>
+                <tr>
+                    <td style="text-align:center;"><?php echo User_Synchronization_Command; ?></th>
+                    <td colspan="4"><input style="width: 100%;"
+                            name="cron_command[<?php echo $Crontab['id_users_crontab']; ?>]" type="text"
+                            value="<?php echo $Crontab['command']; ?>" readonly /></td>
+                </tr>
+                <?php
 		$CronFiles = array_diff($CronFiles, array($Crontab['command']));
 		$Crontab_ID = $Crontab['id_users_crontab'];
 	}
@@ -493,38 +525,41 @@ if ( $DisplayIdent >= 1 ) {
 	if ( !empty($CronFiles) ) {
 		$Crontab_ID++;
 ?>
-			<input name="cron_id" type="hidden" value="<?php echo $Crontab_ID; ?>" />
-			<tr>
-				<td><input class="text_small" name="cron_minutes" type="text" /></td>
-				<td><input class="text_small" name="cron_hours" type="text" /></td>
-				<td><input class="text_small" name="cron_days" type="text" /></td>
-				<td><input class="text_small" name="cron_months" type="text" /></td>
-				<td><input class="text_small" name="cron_numday" type="text" /></td>
-				<td rowspan="2"><input class="submit" name="submit" type="submit" value="<?php echo User_Synchronization_Add; ?>" /></td>
-			</tr>
-			<tr>
-				<td style="text-align:center;"><?php echo User_Synchronization_Command; ?></th>
-				<td colspan="4">
-				<select name="cron_command" style="width: 100%; height: 28px;">
-<?php
+                <input name="cron_id" type="hidden" value="<?php echo $Crontab_ID; ?>" />
+                <tr>
+                    <td><input class="text_small" name="cron_minutes" type="text" /></td>
+                    <td><input class="text_small" name="cron_hours" type="text" /></td>
+                    <td><input class="text_small" name="cron_days" type="text" /></td>
+                    <td><input class="text_small" name="cron_months" type="text" /></td>
+                    <td><input class="text_small" name="cron_numday" type="text" /></td>
+                    <td rowspan="2"><input class="submit" name="submit" type="submit"
+                            value="<?php echo User_Synchronization_Add; ?>" /></td>
+                </tr>
+                <tr>
+                    <td style="text-align:center;"><?php echo User_Synchronization_Command; ?></th>
+                    <td colspan="4">
+                        <select name="cron_command" style="width: 100%; height: 28px;">
+                            <?php
 				foreach($CronFiles as $Script) {
 					echo '<option selected="selected" value="' . $Script . '">' . $Script . '</option>';
 				}
 ?>
-				</select>
-				</td>
-			</tr>
-<?php
+                        </select>
+                    </td>
+                </tr>
+                <?php
 	}
 ?>
-		</table>
-		<div align="center"><p class="Comments"><?php echo User_Synchronization_Crontab_Comment; ?></p></div>
-<?php
+            </table>
+            <div align="center">
+                <p class="Comments"><?php echo User_Synchronization_Crontab_Comment; ?></p>
+            </div>
+            <?php
 	}
 ?>
-	</fieldset>
+        </fieldset>
 
-<?php
+        <?php
 	} // if ( $DisplayIdent >= 1 ) {
 
 	switch ($IdentSync['mode_sync']) {
@@ -557,30 +592,38 @@ if ( $DisplayIdent >= 1 ) {
 	}
 
 ?>
-	<div id="scrollmenu" align="center">
-	<fieldset style="vertical-align: text-top;">
-	<legend><?php echo User_Synchronization_Title_Ident; ?></legend>
-		<table>
-			<tr>
-				<th style="text-align:center;"><?php echo User_Synchronization_ModeSync; ?></th>
-				<th style="text-align:center;"><?php echo User_Synchronization_DstDir; ?></th>
-				<th style="text-align:center;"><?php echo User_Synchronization_DstSrv; ?></th>
-				<th style="text-align:center;"><?php echo User_Synchronization_DstPort; ?></th>
-				<th style="text-align:center;"><?php echo User_Synchronization_DstUser; ?></th>
-				<th style="text-align:center;"><?php echo User_Synchronization_DstPass; ?></th>
-				<th style="text-align:center;"><?php echo User_Synchronization_MaxSync; ?></th>
-				<th style="text-align:center;"><?php echo User_Synchronization_Subdir; ?></th>
-			</tr>
-			<input name="ident_id[<?php echo $IdentSync['ident_id']; ?>]" type="hidden" value="<?php echo $IdentSync['ident_id']; ?>" />
-			<tr>
-				<td><?php echo $mode_sync; ?></td>
-				<td><input class="text_medium" name="sync_dstdir[<?php echo $IdentSync['ident_id']; ?>]" type="text" value="<?php echo $IdentSync['dst_dir']; ?>" /></td>
-				<td><input class="text_medium" name="sync_dstsrv[<?php echo $IdentSync['ident_id']; ?>]" type="text" value="<?php echo $IdentSync['dst_srv']; ?>" /></td>
-				<td><input class="text_small" name="sync_dstport[<?php echo $IdentSync['ident_id']; ?>]" type="text" value="<?php echo $IdentSync['dst_port']; ?>" /></td>
-				<td><input class="text_medium" name="sync_dstuser[<?php echo $IdentSync['ident_id']; ?>]" type="text" value="<?php echo $IdentSync['dst_user']; ?>" /></td>
-				<td><input class="text_medium" name="sync_dstpass[<?php echo $IdentSync['ident_id']; ?>]" type="password" value="<?php echo $IdentSync['dst_pass']; ?>" /></td>
-				<td><div align="center"><select name="sync_maxsync[<?php echo $IdentSync['ident_id']; ?>]" style="width:80px; height: 28px;">
-<?php
+        <div id="scrollmenu" align="center">
+            <fieldset style="vertical-align: text-top;">
+                <legend><?php echo User_Synchronization_Title_Ident; ?></legend>
+                <table>
+                    <tr>
+                        <th style="text-align:center;"><?php echo User_Synchronization_ModeSync; ?></th>
+                        <th style="text-align:center;"><?php echo User_Synchronization_DstDir; ?></th>
+                        <th style="text-align:center;"><?php echo User_Synchronization_DstSrv; ?></th>
+                        <th style="text-align:center;"><?php echo User_Synchronization_DstPort; ?></th>
+                        <th style="text-align:center;"><?php echo User_Synchronization_DstUser; ?></th>
+                        <th style="text-align:center;"><?php echo User_Synchronization_DstPass; ?></th>
+                        <th style="text-align:center;"><?php echo User_Synchronization_MaxSync; ?></th>
+                        <th style="text-align:center;"><?php echo User_Synchronization_Subdir; ?></th>
+                    </tr>
+                    <input name="ident_id[<?php echo $IdentSync['ident_id']; ?>]" type="hidden"
+                        value="<?php echo $IdentSync['ident_id']; ?>" />
+                    <tr>
+                        <td><?php echo $mode_sync; ?></td>
+                        <td><input class="text_medium" name="sync_dstdir[<?php echo $IdentSync['ident_id']; ?>]"
+                                type="text" value="<?php echo $IdentSync['dst_dir']; ?>" /></td>
+                        <td><input class="text_medium" name="sync_dstsrv[<?php echo $IdentSync['ident_id']; ?>]"
+                                type="text" value="<?php echo $IdentSync['dst_srv']; ?>" /></td>
+                        <td><input class="text_small" name="sync_dstport[<?php echo $IdentSync['ident_id']; ?>]"
+                                type="text" value="<?php echo $IdentSync['dst_port']; ?>" /></td>
+                        <td><input class="text_medium" name="sync_dstuser[<?php echo $IdentSync['ident_id']; ?>]"
+                                type="text" value="<?php echo $IdentSync['dst_user']; ?>" /></td>
+                        <td><input class="text_medium" name="sync_dstpass[<?php echo $IdentSync['ident_id']; ?>]"
+                                type="password" value="<?php echo $IdentSync['dst_pass']; ?>" /></td>
+                        <td>
+                            <div align="center"><select name="sync_maxsync[<?php echo $IdentSync['ident_id']; ?>]"
+                                    style="width:80px; height: 28px;">
+                                    <?php
 				$MaxToSyncList = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10');
 				foreach($MaxToSyncList as $MaxToSync) {
 					if ( $MaxToSync == 0) {
@@ -595,40 +638,47 @@ if ( $DisplayIdent >= 1 ) {
 					}
 				}
 ?>
-				</select></div></td>
-				<td><?php echo $create_subdir; ?></td>
-			</tr>
-		</table>
-		<table style="width:100%">
-			<tr>
-				<th style="text-align:center;"><?php echo User_Synchronization_MailObjectOK; ?></th>
-				<th style="text-align:center;"><?php echo User_Synchronization_MailObjectKO; ?></th>
-			</tr>
-			<tr>
-				<td><input style="width:100%; cursor: pointer;" name="MailObjectOK[<?php echo $IdentSync['ident_id']; ?>]" type="text" value="<?php echo $IdentSync['MailObjectOK']; ?>" /></td>
-				<td><input style="width:100%; cursor: pointer;" name="MailObjectKO[<?php echo $IdentSync['ident_id']; ?>]" type="text" value="<?php echo $IdentSync['MailObjectKO']; ?>" /></td>
-			</tr>
-		</table>
-		<div align="center"><p class="Comments"><?php echo User_Synchronization_SyncComment; ?></p></div>
-	</fieldset>
-    </div>
-<?php
+                                </select></div>
+                        </td>
+                        <td><?php echo $create_subdir; ?></td>
+                    </tr>
+                </table>
+                <table style="width:100%">
+                    <tr>
+                        <th style="text-align:center;"><?php echo User_Synchronization_MailObjectOK; ?></th>
+                        <th style="text-align:center;"><?php echo User_Synchronization_MailObjectKO; ?></th>
+                    </tr>
+                    <tr>
+                        <td><input style="width:100%; cursor: pointer;"
+                                name="MailObjectOK[<?php echo $IdentSync['ident_id']; ?>]" type="text"
+                                value="<?php echo $IdentSync['MailObjectOK']; ?>" /></td>
+                        <td><input style="width:100%; cursor: pointer;"
+                                name="MailObjectKO[<?php echo $IdentSync['ident_id']; ?>]" type="text"
+                                value="<?php echo $IdentSync['MailObjectKO']; ?>" /></td>
+                    </tr>
+                </table>
+                <div align="center">
+                    <p class="Comments"><?php echo User_Synchronization_SyncComment; ?></p>
+                </div>
+            </fieldset>
+        </div>
+        <?php
 if ( count($FilesInQueue) > 0 ) {
 ?>
-	<br />
-	<div id="scrollmenu" align="center">
-	<fieldset style="vertical-align: text-top;">
-	<legend><?php echo User_Synchronization_Title_FilesToSync; ?></legend>
-		<table>
-			<tr>
-				<th style="text-align:center;"><?php echo User_Synchronization_SyncMode; ?></th>
-				<th style="text-align:center;"><?php echo Global_IsActive; ?></th>
-				<th style="text-align:center;"><?php echo User_Synchronization_FileName; ?></th>
-				<th style="text-align:center;"><?php echo User_Synchronization_rTorrentConfigDirectory; ?></th>
-				<th style="text-align:center;"><?php echo User_Synchronization_Comments; ?></th>
-				<th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
-			</tr>
-<?php
+        <br />
+        <div id="scrollmenu" align="center">
+            <fieldset style="vertical-align: text-top;">
+                <legend><?php echo User_Synchronization_Title_FilesToSync; ?></legend>
+                <table>
+                    <tr>
+                        <th style="text-align:center;"><?php echo User_Synchronization_SyncMode; ?></th>
+                        <th style="text-align:center;"><?php echo Global_IsActive; ?></th>
+                        <th style="text-align:center;"><?php echo User_Synchronization_FileName; ?></th>
+                        <th style="text-align:center;"><?php echo User_Synchronization_rTorrentConfigDirectory; ?></th>
+                        <th style="text-align:center;"><?php echo User_Synchronization_Comments; ?></th>
+                        <th style="text-align:center;"><?php echo Global_Table_Delete; ?></th>
+                    </tr>
+                    <?php
 	$CountDirect=0;
 	$CountCron=0;
 	foreach($FilesInQueue as $Files) {
@@ -664,22 +714,23 @@ if ( count($FilesInQueue) > 0 ) {
 					break;
 		}
 ?>
-			<input name="list_id[<?php echo $Id_list; ?>]" type="hidden" value="<?php echo $Id_list; ?>" />
-			<tr>
-				<td><?php echo $list_category; ?></td>
-				<td><?php echo $is_active; ?></td>
-				<td><?php echo $Files['get_name']; ?></td>
-				<td><?php echo $Files['get_custom1']; ?></td>
-				<td><?php echo $Files['comments']; ?></td>
-				<td>
-					<input class="submit" name="delete_filewaiting[<?php echo $Id_list; ?>]" type="checkbox" value="<?php echo $Id_list; ?>" />
-				</td>
-			</tr>
-<?php
+                    <input name="list_id[<?php echo $Id_list; ?>]" type="hidden" value="<?php echo $Id_list; ?>" />
+                    <tr>
+                        <td><?php echo $list_category; ?></td>
+                        <td><?php echo $is_active; ?></td>
+                        <td><?php echo $Files['get_name']; ?></td>
+                        <td><?php echo $Files['get_custom1']; ?></td>
+                        <td><?php echo $Files['comments']; ?></td>
+                        <td>
+                            <input class="submit" name="delete_filewaiting[<?php echo $Id_list; ?>]" type="checkbox"
+                                value="<?php echo $Id_list; ?>" />
+                        </td>
+                    </tr>
+                    <?php
 	}
 ?>
-		</table>
-<?php
+                </table>
+                <?php
 	if ( ($IdentSync['dst_dir'] != '') && ($IdentSync['dst_srv'] != '') && ($IdentSync['dst_port']) ) {
 		if ( ($users_scripts['script'] != '') || ($CountDirect >= 1) ) {
 			if ( $DirectPid == '' ) {
@@ -694,9 +745,9 @@ if ( count($FilesInQueue) > 0 ) {
 		}
 	}
 ?>
-	</fieldset>
-	</div>
-<?php
+            </fieldset>
+        </div>
+        <?php
 }
 
 if ( ($IdentSync['dst_dir'] != '') && ($IdentSync['dst_srv'] != '') && ($IdentSync['dst_port']) ) {
@@ -717,37 +768,44 @@ if ( ($IdentSync['dst_dir'] != '') && ($IdentSync['dst_srv'] != '') && ($IdentSy
 
 	if ( !empty($SelectOptions) ) {
 ?>
-		<br />
-		<div id="scrollmenu" align="center">
-		<fieldset style="vertical-align: text-top;">
-		<legend><?php echo User_Synchronization_Title_DownloadedFiles; ?></legend>
-			<table style="width:100%">
-				<tr>
-					<th style="text-align:center;"><?php echo User_Synchronization_Files; ?></th>
-					<th style="text-align:center;"></th>
-				</tr>
-				<tr>
-					<td><div align="center"><select name="downloaded_files" style="width:100%; height: 28px;">
-<?php
+        <br />
+        <div id="scrollmenu" align="center">
+            <fieldset style="vertical-align: text-top;">
+                <legend><?php echo User_Synchronization_Title_DownloadedFiles; ?></legend>
+                <table style="width:100%">
+                    <tr>
+                        <th style="text-align:center;"><?php echo User_Synchronization_Files; ?></th>
+                        <th style="text-align:center;"></th>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div align="center"><select name="downloaded_files" style="width:100%; height: 28px;">
+                                    <?php
 				foreach($SelectOptions as $Option) {
 					echo $Option;
 				}
 ?>
-					</select></div></td>
-					<td><input class="submit" style="width:<?php echo strlen(User_Synchronization_AddFiles)*10; ?>px" name="add_file" type="submit" value="<?php echo User_Synchronization_AddFiles; ?>" /></td>
-				</tr>
-			</table>
-			<div align="center"><p class="Comments"><?php echo User_Synchronization_AddFilesComment; ?></p></div>
-		</fieldset>
-		</div>
-<?php
+                                </select></div>
+                        </td>
+                        <td><input class="submit"
+                                style="width:<?php echo strlen(User_Synchronization_AddFiles)*10; ?>px" name="add_file"
+                                type="submit" value="<?php echo User_Synchronization_AddFiles; ?>" /></td>
+                    </tr>
+                </table>
+                <div align="center">
+                    <p class="Comments"><?php echo User_Synchronization_AddFilesComment; ?></p>
+                </div>
+            </fieldset>
+        </div>
+        <?php
 	} //if ( !empty($SelectOptions) ) {
 }
 ?>
 
-	<input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;" name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
+        <input class="submit" style="width:<?php echo strlen(Global_SaveChanges)*10; ?>px; margin-top: 10px;"
+            name="submit" type="submit" value="<?php echo Global_SaveChanges; ?>" />
 
-	</div>
+    </div>
 </form>
 
 <?php
