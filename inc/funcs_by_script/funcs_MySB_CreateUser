@@ -128,21 +128,36 @@ gfnMinioUsersBuckets() {
     esac
 }
 
-#### NextCloud External Mounts
-gfnNextCloudExternalMounts() {
-    local aExternalMounts sExternalMount nOldId IdStorage sUserDataDir sUser
-    [[ -z "${1}" ]] && return 1
-    sUser="${1}"
-
+#### NextCloud Cleaning previous external Mounts
+gfnNextCloudCleanExternalMounts() {
+    local aExternalMounts sExternalMount nOldId
     aExternalMounts=('rTorrent Complete' 'rTorrent Torrents' 'rTorrent Watch')
+
     for sExternalMount in "${aExternalMounts[@]}"; do
         echo
-        echo "Creating external mount ${sExternalMount} for ${sUser}"
+        echo "Cleaning previous external mounts ${sExternalMount}"
         # Clean old external mount
         nOldId=$(cmdMySQL 'NextCloud_db' "SELECT mount_id FROM oc_external_mounts WHERE mount_point='/${sExternalMount}';")
         if [[ ${nOldId} -gt 0 ]]; then
             su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:delete ${nOldId} --yes"
         fi
+    done
+
+    for nId in $(cmdMySQL 'NextCloud_db' "SELECT mount_id FROM oc_external_mounts WHERE mount_point='/MySB_Home';"); do
+        su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:delete ${nId} --yes"
+    done
+}
+
+#### NextCloud External Mounts
+gfnNextCloudExternalMounts() {
+    local aExternalMounts sExternalMount IdStorage sUserDataDir sUser
+    [[ -z "${1}" ]] && return 1
+    sUser="${1}"
+    aExternalMounts=('rTorrent Complete' 'rTorrent Torrents' 'rTorrent Watch')
+
+    for sExternalMount in "${aExternalMounts[@]}"; do
+        echo
+        echo "Creating external mount ${sExternalMount} for ${sUser}"
         # Create new one
         IdStorage=$(su -s /bin/sh www-data -c "/usr/bin/php ${gsNextCloudDir}/occ files_external:create '${sExternalMount}' local null::null" | awk '{ print $5 }')
         sUserDataDir="${sExternalMount##* }"
