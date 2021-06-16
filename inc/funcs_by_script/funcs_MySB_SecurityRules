@@ -274,20 +274,20 @@ gfnRestartRtorrentSessions() {
     fi
 }
 
-#### Create '/etc/bind/MySB.zones.blacklists' and '/etc/dnscrypt-proxy/blacklist.txt' file
+#### Create '/etc/bind/MySB.zones.blacklists' and '/etc/dnscrypt-proxy/blocked-names.txt' file
 gfnGenerateBlacklistsZone() {
     local sAllTrackers sTracker
 
     echo "#### MySB - Blacklisted domains (ex: inactive trackers)" >/etc/bind/MySB.zones.blacklists
     if [ -d /etc/dnscrypt-proxy ]; then
-        install -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/blacklist.txt.tmpl /etc/dnscrypt-proxy/blacklist.txt
+        install -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/blocked-names.txt.tmpl /etc/dnscrypt-proxy/blocked-names.txt
     fi
 
-    # Remove all activated/deactivated trackers from DNScrypt-proxy blacklists file (>/etc/dnscrypt-proxy/blacklist.txt)
-    if [ -f /etc/dnscrypt-proxy/blacklist.txt ]; then
+    # Remove all activated/deactivated trackers from DNScrypt-proxy blacklists file (>/etc/dnscrypt-proxy/blocked-names.txt)
+    if [ -f /etc/dnscrypt-proxy/blocked-names.txt ]; then
         sAllTrackers="$(cmdMySQL 'MySB_db' "SELECT id_trackers_list,tracker FROM trackers_list WHERE 1;")"
         for sTracker in ${sAllTrackers}; do
-            sed -i "/${sTracker}/d" /etc/dnscrypt-proxy/blacklist.txt
+            sed -i "/${sTracker}/d" /etc/dnscrypt-proxy/blocked-names.txt
         done
     fi
 
@@ -295,8 +295,8 @@ gfnGenerateBlacklistsZone() {
     sAllTrackers="$(cmdMySQL 'MySB_db' "SELECT tracker FROM trackers_list WHERE is_active='0';")"
     for sTracker in ${sAllTrackers}; do
         echo "zone \"${sTracker}\" { type master; file \"/etc/bind/db.empty\"; };" >>/etc/bind/MySB.zones.blacklists
-        if [ -f /etc/dnscrypt-proxy/blacklist.txt ]; then
-            echo "${sTracker}" >>/etc/dnscrypt-proxy/blacklist.txt
+        if [ -f /etc/dnscrypt-proxy/blocked-names.txt ]; then
+            echo "${sTracker}" >>/etc/dnscrypt-proxy/blocked-names.txt
         fi
     done
     perl -pi -e "s/^#include \"\/etc\/bind\/MySB.zones.blacklists\";/include \"\/etc\/bind\/MySB.zones.blacklists\";/g" /etc/bind/named.conf.local
@@ -315,7 +315,7 @@ gfnCreateHostsFile() {
     } >/etc/hosts
 
     if [[ -d /etc/dnscrypt-proxy ]]; then
-        install -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/whitelist.txt.tmpl /etc/dnscrypt-proxy/whitelist.txt
+        install -o root -g root -m 0644 "${MySB_InstallDir}"/templates/dnscrypt/allowed-names.txt.tmpl /etc/dnscrypt-proxy/allowed-names.txt
     fi
 
     # Needed domains
@@ -323,22 +323,22 @@ gfnCreateHostsFile() {
         echo
         echo "# Needed domains"
     } >>/etc/hosts
-    if [[ -f /etc/dnscrypt-proxy/whitelist.txt ]]; then
+    if [[ -f /etc/dnscrypt-proxy/allowed-names.txt ]]; then
         {
             echo
             echo "# Needed domains"
-        } >>/etc/dnscrypt-proxy/whitelist.txt
+        } >>/etc/dnscrypt-proxy/allowed-names.txt
     fi
     for sHostname in "${gsUrlCheckList[@]}" "${gaNeededDomains[@]}"; do
         sHostname="$(echo "${sHostname}" | cut -d '/' -f 1)"
         sIPv4="$(nslookup -type=A "${sHostname}" | grep 'Address:' | awk '{ print $2 }' | tail -n +2 | head -n1)"
         echo "${sIPv4}	 ${sHostname}" >>/etc/hosts
-        if [[ -f /etc/dnscrypt-proxy/whitelist.txt ]]; then
-            echo "${sHostname}" >>/etc/dnscrypt-proxy/whitelist.txt
+        if [[ -f /etc/dnscrypt-proxy/allowed-names.txt ]]; then
+            echo "${sHostname}" >>/etc/dnscrypt-proxy/allowed-names.txt
         fi
     done
 
-    # Add all activated trackers to /etc/hosts & /etc/dnscrypt-proxy/whitelist.txt
+    # Add all activated trackers to /etc/hosts & /etc/dnscrypt-proxy/allowed-names.txt
     cmdMySQL 'MySB_db' "SELECT id_trackers_list,tracker FROM trackers_list WHERE is_active='1';" | sed 's/\t/|/g;' | while read -r sROW; do
         nIdTracker="$(echo "${sROW}" | awk '{split($0,a,"|"); print a[1]}')"
         sTracker="$(echo "${sROW}" | awk '{split($0,a,"|"); print a[2]}')"
@@ -350,8 +350,8 @@ gfnCreateHostsFile() {
             fi
             for sIPv4 in ${sTrackerIPv4}; do
                 echo "${sIPv4}	   ${sTracker}" >>/etc/hosts
-                if [[ -f /etc/dnscrypt-proxy/whitelist.txt ]]; then
-                    echo "${sTracker}" >>/etc/dnscrypt-proxy/whitelist.txt
+                if [[ -f /etc/dnscrypt-proxy/allowed-names.txt ]]; then
+                    echo "${sTracker}" >>/etc/dnscrypt-proxy/allowed-names.txt
                 fi
             done
         fi
